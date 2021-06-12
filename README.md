@@ -1,7 +1,6 @@
 - 👋 Hi, I’m @Vishal-Kaul
 - 👀 I’m interested in UX Research
 - 🌱 I’m currently learning 3D
-- 💞️ I’m looking to collaborate on 
 - 📫 How to reach me https://designwithvishal.webflow.io/
 
 <!---
