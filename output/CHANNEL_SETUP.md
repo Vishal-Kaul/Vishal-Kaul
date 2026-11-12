@@ -37,7 +37,7 @@ Subscribe and turn on 🔔 so you never miss a moment that breaks football.
 
 📩 Business / collabs: [your email]
 ```
-(About 640 characters. YouTube's limit is 1,000.)
+(About 530 characters. YouTube's limit is 1,000.)
 
 ---
 
