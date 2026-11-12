@@ -1,18 +1,25 @@
-# Commentary script: Top 5 Wildest Football Moments
+# Commentary script v2: Top 5 Wildest Football Moments
 
-Voice: AI commentator (British male, Kokoro TTS, generated offline). Music and sound effects were generated from scratch, so they're original and copyright-free.
+**Voice:** AI commentator, a blend of a deep voice and an energetic voice (Kokoro TTS, offline), with heavy compression, a "chest + presence" EQ and a stadium PA echo on the big lines.
+**Music:** original Brazilian-funk / phonk beat at 150 BPM (distorted 808 slides, cowbells, tamborzão kick, sidechain pump), generated from scratch, so there's nothing to claim.
+**Meme sounds:** vine boom, FAAAH, SIUUU, MLG airhorn, bruh, wow, metal pipe, taco bell bong, whoosh.
 
-| Time | Clip | Commentary | Sound / visual hook |
+| Time | Commentary | Meme sound | On-screen pop |
 |---|---|---|---|
-| 0:00 | Intro | "Top five wildest football moments... and number five is UNREAL!" | Boom hit, muffled beat that opens up, **WAIT FOR #5!** banner |
-| 0:04 | #1 The Art of Defending | "Number one! The art of defending! Carvajal shields it... like a brick wall!" | Crowd swell |
-| 0:09 | #2 Messi the King | "Number two! Messi picks it up... past one... past two..." | Whoosh, boom, zoom punch, flash |
-| 0:16 | | "...into the box... and he finishes! Messi... the King!" | Crowd roar |
-| 0:21 | #3 Ronaldo the Legend | "Number three! Ronaldo! The stepover... the defender is on the floor!" | Whoosh, boom, zoom punch, flash |
-| 0:27 | | "He shoots... GOAL! The legend!" | Air horn x2, crowd roar |
-| 0:32 | #4 Playing Tricks | "Number four! Messi versus Ronaldo! Messi is just playing with him... pure tricks!" | Whoosh, boom, zoom punch, flash |
-| 0:39 | Build-up | (no commentary) | Riser, beat cuts out |
-| 0:41 | #5 Crazy Leg Work | "And number five! Foden! Look at those feet! He's dancing through them... are you kidding me?!" | **Beat drop**, boom, air horn |
-| 0:50 | End card | "Which one's your favourite? Comment below!" | Record scratch, freeze frame, **COMMENT 1-5 BELOW** |
+| 0:00 | "STOP scrolling! These five moments BROKE football... and number five? UNREAL!" | Vine boom, taco bell bong | WAIT FOR #5! |
+| 0:04 | "Number one! The slide..." | FAAAH | WHAT A SLIDE |
+| 0:07 | "Carvajal? BRICK WALL!" | Metal pipe clang | BRICK WALL |
+| 0:09 | "Number two! Messi! At the Bernabéu!" | Whoosh, vine boom, crash | zoom punch + flash |
+| 0:12 | "One... two... three defenders... GONE!" | Crowd builds | |
+| 0:18 | "In the box... it's MESSI!" / "The KING!" | WOW | GOLAZO |
+| 0:21 | "Number three! Ronaldo! Stepover... stepover!" | Whoosh, vine boom | zoom punch + flash |
+| 0:27 | "He's on the floor! He shoots..." | Bruh | BRUH |
+| 0:30 | "GOAL!" | Airhorn, **SIUUU** | SIUUU |
+| 0:32 | "Number four! Messi versus Ronaldo! The GOAT debate... LIVE!" | Whoosh, vine boom | zoom punch + flash |
+| 0:38 | "Too easy for Messi!" | Vine boom | TOO EASY |
+| 0:39 | (music cuts out, riser) | Riser | |
+| 0:41 | "And number five! FODEN! Watch the feet!" | **Beat drop**, vine boom | zoom punch + flash |
+| 0:45 | "Are you KIDDING me?! That's ILLEGAL!" | FAAAH, airhorn | ILLEGAL |
+| 0:50 | "Messi or Ronaldo? Comment NOW!" | Record scratch, vine boom | MESSI OR RONALDO? COMMENT NOW |
 
-Tip: record this script in your own voice and drop it in. Your own commentary is the strongest way to make the channel count as original content for monetization.
+The ending asks "Messi or Ronaldo?" on purpose: debates like this get the most comments, and comments push the video to more people.
