@@ -1,6 +1,7 @@
 # How to upload "Top 5 Wildest Football Moments" to YouTube Shorts
 
-Video file: `top5_wildest_football_moments_short.mp4` (vertical 1080×1920, about 50 seconds, so it counts as a Short)
+Video file: **`top5_wildest_football_moments_commentary.mp4`** (final version with commentary, vertical 1080×1920, 54 seconds, so it counts as a Short)
+Thumbnail: `thumbnail_vertical_1080x1920.jpg`
 
 ---
 
@@ -8,7 +9,7 @@ Video file: `top5_wildest_football_moments_short.mp4` (vertical 1080×1920, abou
 
 1. Open the YouTube app, tap **+**, then **Upload a video**, and pick the file.
 2. Leave it uncut; it's already under 60 seconds.
-3. *(Optional)* Tap **Add sound** and pick a trending song at low volume, under the clips' own sound.
+3. **Don't add a sound.** The video already has music, commentary and sound effects, and adding a sound would split your revenue with the music owners.
 4. Tap **Next** and fill in the details from section 2.
 5. **Select audience:** choose *"No, it's not made for kids"*. If you choose "made for kids", comments are turned off and the video gets recommended to fewer people.
 6. **Visibility:** choose **Public** (or **Schedule**, see section 4).
@@ -20,32 +21,41 @@ From a computer: go to studio.youtube.com, click **Create**, then **Upload video
 
 ## 2. Text to copy and paste
 
-### Title (pick one, under 100 characters)
-- `Top 5 Wildest Football Moments 🤯⚽ #shorts`
-- `These Football Moments Are INSANE 😱 #football #shorts`
-- `Messi vs Ronaldo + 3 Crazy Moments 🔥 #shorts`
-
-The first title is the safest choice. Put the most interesting words first, because only about 40 characters show in the Shorts feed.
+### Title (recommended)
+```
+5 Moments That BROKE Football 🤯 #5 Is Unreal
+```
+It matches the thumbnail and the commentator's opening line. Backup options:
+- `Messi or Ronaldo? 5 Wildest Football Moments 🤯⚽`
+- `Wait For #5… 🤯 Wildest Football Moments Ever`
 
 ### Description
 ```
-Top 5 wildest football moments you won't believe 🤯⚽
+5 moments that BROKE football 🤯⚽ …and number 5 is unreal!
 
-1. The Art of Defending
-2. Messi the King 👑
-3. Ronaldo the Legend 🐐
-4. Playing Tricks 🪄
-5. Crazy Leg Work 🔥
+1️⃣ The Art of Defending – Carvajal's brick wall 🧱
+2️⃣ Messi the King – the solo run at the Bernabéu 👑
+3️⃣ Ronaldo the Legend – stepover, goal, SIUUU 🐐
+4️⃣ Playing Tricks – Messi vs Ronaldo 🪄
+5️⃣ Crazy Leg Work – Phil Foden 🔥
 
-Which moment was the craziest? Comment the number 👇
-Subscribe for daily football Shorts ⚽
+Messi or Ronaldo? Settle it in the comments 👇
+Subscribe for more football Shorts ⚽
 
-#football #soccer #shorts #messi #ronaldo #footballshorts #skills #viral
+Music: "Aggressive Sport Phonk" by anomy5 (Pixabay)
+Commentary voice: AI-generated
+
+#football #soccer #shorts #messi #ronaldo #foden #footballshorts #goat
 ```
 
-### Tags (add these on a computer, under "Show more", then "Tags")
+### Tags (on a computer: "Show more", then "Tags")
 ```
-football, soccer, football shorts, top 5 football moments, wildest football moments, crazy football moments, football skills, messi, ronaldo, messi vs ronaldo, cristiano ronaldo, lionel messi, football tricks, defending skills, football highlights, viral football, soccer skills, best football moments, foden, man city
+football, soccer, football shorts, moments that broke football, wildest football moments, top 5 football moments, crazy football moments, messi, ronaldo, messi vs ronaldo, goat debate, lionel messi, cristiano ronaldo, phil foden, foden skills, carvajal defending, messi bernabeu goal, ronaldo goal, siuuu, football skills, football edits, football commentary
+```
+
+### Pinned comment (post right after uploading)
+```
+Messi or Ronaldo? 🐐 Wrong answers only 👇
 ```
 
 ### Hashtags
@@ -65,7 +75,7 @@ In the description, use 3–8 hashtags. Only the first 3 show above the title, s
 | Comments | **On** (sorted by Top) |
 | Remixing | **Allow** (other people's remixes can link back to your video) |
 | Language | English |
-| Altered or synthetic content | **No** |
+| Altered or synthetic content | **Yes** (the commentary voice is AI-generated) |
 
 ---
 
