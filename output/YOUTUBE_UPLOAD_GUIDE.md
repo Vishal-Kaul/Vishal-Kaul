@@ -53,6 +53,10 @@ In the description, use 3–8 hashtags. Only the first 3 show above the title, s
 
 ---
 
+## 2b. Thumbnail
+- `thumbnail_vertical_1080x1920.jpg`: use this one for the Short. On the phone upload screen, tap the **pencil/thumbnail icon** and use **upload image** if the app offers it. If it only lets you pick a frame from the video, choose the Messi vs Ronaldo face-off near the end.
+- `thumbnail_landscape_1280x720.jpg`: use this one if you upload from a computer (YouTube Studio, then **Details**, then **Thumbnail**, then **Upload file**), or for a long-form version of the video. Studio may ask you to verify your phone number before you can add custom thumbnails.
+
 ## 3. Settings that help a video spread
 
 | Setting | What to choose |
