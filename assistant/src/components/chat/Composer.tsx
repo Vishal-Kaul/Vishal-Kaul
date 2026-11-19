@@ -54,8 +54,8 @@ export function Composer({ onSend, disabled, variant, inputRef }: Props) {
   }
 
   const row = mobile
-    ? 'flex items-end gap-2 rounded-full border border-line bg-white py-1.5 pl-5 pr-1.5'
-    : 'flex items-end gap-3 px-6 py-4';
+    ? 'flex items-end gap-2 rounded-full border border-line bg-white py-1.5 pl-5 pr-1.5 has-[textarea:focus-visible]:outline-2 has-[textarea:focus-visible]:outline-offset-2 has-[textarea:focus-visible]:outline-brand'
+    : 'flex items-end gap-3 pb-5 pl-6 pr-7 pt-4';
 
   return (
     <div className={mobile ? 'px-4 pb-3' : ''}>
@@ -75,7 +75,7 @@ export function Composer({ onSend, disabled, variant, inputRef }: Props) {
           aria-label="Message Vishal’s assistant"
           aria-describedby={tooLong ? noticeId : undefined}
           className={`min-w-0 flex-1 resize-none bg-transparent text-[15px] leading-[22px] text-ink placeholder:text-subtle ${
-            mobile ? 'py-3' : 'py-3 pl-2'
+            mobile ? 'py-3 focus-visible:outline-none' : 'py-3 pl-[18px]'
           }`}
         />
         {hasText ? (

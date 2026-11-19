@@ -160,4 +160,47 @@ describe('ChatCard', () => {
     expect(screen.queryByText('AI assistant for Vishal')).not.toBeInTheDocument();
     expect(within(document.body).queryByRole('region')).not.toBeInTheDocument();
   });
+  it('renders leading content first and trailing content last in the log, and can hide the date', async () => {
+    render(<ChatCard conv={makeConv()} variant="mobile" leading={<p>Hero</p>} trailing={<p>End</p>} hideDate />);
+    const log = screen.getByRole('log');
+    expect(log.firstElementChild).toHaveTextContent('Hero');
+    expect(log.lastElementChild).toHaveTextContent('End');
+    // give DateDivider's effect a chance to fill in a label if it were rendered
+    await screen.findByText('Hero');
+    expect(within(log).queryByText(/^Today · /)).not.toBeInTheDocument();
+  });
+
+  it('shows the date divider by default', async () => {
+    render(<ChatCard conv={makeConv()} variant="desktop" />);
+    expect(await screen.findByText(/^Today · \d\d:\d\d$/)).toBeInTheDocument();
+  });
+
+  it('activity pills are static without onActivityClick', () => {
+    const conv = makeConv({
+      messages: [
+        { id: 'm1', role: 'assistant', text: GREETING },
+        { id: 'm2', role: 'activity', text: 'Pulling up the Turbo Mode case study' },
+      ],
+    });
+    render(<ChatCard conv={conv} variant="desktop" />);
+    expect(screen.getByText('Pulling up the Turbo Mode case study')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Pulling up/ })).not.toBeInTheDocument();
+  });
+
+  it('with onActivityClick the latest activity pill is a reopen button', async () => {
+    const onActivityClick = vi.fn();
+    const conv = makeConv({
+      messages: [
+        { id: 'm1', role: 'assistant', text: GREETING },
+        { id: 'm2', role: 'activity', text: 'Pulling up the Turbo Mode case study' },
+        { id: 'm3', role: 'activity', text: 'Pulling up the Fisdom Revamp case study' },
+      ],
+    });
+    render(<ChatCard conv={conv} variant="mobile" onActivityClick={onActivityClick} />);
+    expect(screen.queryByRole('button', { name: 'Open: Pulling up the Turbo Mode case study' })).not.toBeInTheDocument();
+    const pill = screen.getByRole('button', { name: 'Open: Pulling up the Fisdom Revamp case study' });
+    expect(pill).toHaveAttribute('type', 'button');
+    await userEvent.click(pill);
+    expect(onActivityClick).toHaveBeenCalledTimes(1);
+  });
 });

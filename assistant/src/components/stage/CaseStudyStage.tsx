@@ -55,9 +55,11 @@ export function CaseStudyStage({ project, tab, onTab, variant, onClose }: Props)
       { c: content.after, dark: true },
     ] as const;
     body = (
-      <div className={`flex flex-col ${sheet ? 'gap-4' : 'gap-5'}`}>
-        <div>
-          <h2 className={`font-bold tracking-[-0.035em] leading-none ${sheet ? 'text-[36px]' : 'text-[64px]'}`}>
+      <div className={`flex flex-col ${sheet ? 'gap-[18px]' : 'gap-5'}`}>
+        <div className={sheet ? 'pb-1' : undefined}>
+          <h2
+            className={`font-bold tracking-[-0.035em] leading-none ${sheet ? 'text-[36px]' : 'text-[44px] xl:text-[64px]'}`}
+          >
             {renderHeadline(content.headline)}
           </h2>
           {!sheet && <p className="mt-4 text-[18px] text-muted">{content.subhead}</p>}
@@ -68,13 +70,13 @@ export function CaseStudyStage({ project, tab, onTab, variant, onClose }: Props)
               c ? (
                 <div
                   key={dark ? 'after' : 'before'}
-                  className={`rounded-[20px] ${sheet ? 'p-4' : 'p-6'} ${dark ? 'bg-ink text-white' : 'bg-white'}`}
+                  className={`rounded-[20px] ${sheet ? 'p-4' : 'p-5 xl:p-6'} ${dark ? 'bg-ink text-white' : 'bg-white'}`}
                 >
                   <p className={`text-[13px] font-medium ${dark ? 'text-white/80' : 'text-subtle'}`}>
                     {sheet ? c.shortKicker : c.kicker}
                   </p>
                   <p
-                    className={`font-bold leading-tight ${sheet ? 'text-[30px]' : 'text-[44px]'} ${
+                    className={`font-bold leading-tight ${sheet ? 'text-[30px]' : 'text-[32px] xl:text-[44px]'} ${
                       dark ? 'text-brand-soft' : 'text-subtle'
                     }`}
                   >
@@ -92,7 +94,7 @@ export function CaseStudyStage({ project, tab, onTab, variant, onClose }: Props)
         {content.takeaway && (
           <div className="border-l-[3px] border-brand pl-4">
             <p className="text-[13px] font-medium text-brand">Takeaway</p>
-            <p className="text-[17px] font-semibold text-ink">
+            <p className={`font-semibold text-ink ${sheet ? 'text-[15px] leading-[21px]' : 'text-[17px]'}`}>
               {sheet ? content.takeaway.shortText : content.takeaway.text}
             </p>
           </div>
@@ -106,13 +108,13 @@ export function CaseStudyStage({ project, tab, onTab, variant, onClose }: Props)
       className={
         sheet
           ? 'bg-wash px-5 pb-6'
-          : 'flex h-full flex-col rounded-card bg-wash p-9'
+          : 'flex flex-1 flex-col rounded-card bg-wash p-7 xl:p-9'
       }
     >
       <div className="flex items-center justify-between gap-4">
         <Tabs value={tab} onChange={onTab} idPrefix={idPrefix} />
         {!sheet && (
-          <span className="shrink-0 text-[14px] font-medium text-muted">{p.name} · case study</span>
+          <span className="hidden shrink-0 text-[14px] font-medium text-muted xl:inline">{p.name} · case study</span>
         )}
       </div>
       <div
@@ -124,7 +126,7 @@ export function CaseStudyStage({ project, tab, onTab, variant, onClose }: Props)
         {body}
       </div>
       {sheet ? (
-        <div className="mt-6 flex flex-col items-center gap-2">
+        <div className="mt-9 flex flex-col items-center gap-3">
           {link}
           <button type="button" onClick={onClose} className="h-11 text-[15px] font-semibold text-brand">
             Back to chat

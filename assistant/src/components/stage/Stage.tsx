@@ -21,7 +21,7 @@ export function Stage({
 }) {
   const reduced = useReducedMotion();
   const key = stage.view === 'welcome' ? 'welcome' : stage.project;
-  const cls = `${styles.root} h-full${reduced ? '' : ' motion-safe:animate-[stageIn_200ms_ease-out]'}`;
+  const cls = `${styles.root}${reduced ? '' : ' motion-safe:animate-[stageIn_200ms_ease-out]'}`;
   return (
     <div key={key} className={cls} data-reduced={reduced ? 'true' : undefined}>
       {stage.view === 'welcome' ? (

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import type { Conversation } from '@/lib/types';
 import { ActivityPill } from './ActivityPill';
 import { Bubble } from './Bubble';
@@ -12,7 +13,20 @@ import { TypingDots } from './TypingDots';
 
 const NEAR_BOTTOM = 48;
 
-export function MessageList({ conv }: { conv: Conversation }) {
+type Props = {
+  conv: Conversation;
+  variant?: 'desktop' | 'mobile';
+  /** rendered as the first child of the log (mobile hero) */
+  leading?: ReactNode;
+  /** rendered as the last child of the log (mobile: space under the case-study sheet) */
+  trailing?: ReactNode;
+  /** hide the "Today · HH:MM" divider */
+  hideDate?: boolean;
+  /** when set, the latest activity pill becomes a button that calls this */
+  onActivityClick?: () => void;
+};
+
+export function MessageList({ conv, variant = 'desktop', leading, trailing, hideDate, onActivityClick }: Props) {
   const { messages, status, quickReplies } = conv.state;
   const ref = useRef<HTMLDivElement>(null);
   const atBottom = useRef(true);
@@ -35,6 +49,13 @@ export function MessageList({ conv }: { conv: Conversation }) {
   }
 
   const lastRole = messages.length ? messages[messages.length - 1].role : undefined;
+  let lastActivityId: string | undefined;
+  for (let i = messages.length - 1; i >= 0; i--) {
+    if (messages[i].role === 'activity') {
+      lastActivityId = messages[i].id;
+      break;
+    }
+  }
 
   useEffect(() => {
     // The visitor's own message always scrolls into view.
@@ -55,15 +76,25 @@ export function MessageList({ conv }: { conv: Conversation }) {
         aria-label="Conversation"
         aria-busy={status === 'streaming'}
         onScroll={onScroll}
-        className="flex h-full flex-col gap-4 overflow-y-auto px-6 py-6"
+        className={`flex h-full flex-col gap-4 overflow-y-auto ${variant === 'mobile' ? 'px-4 pb-4 pt-1' : 'px-6 py-6'}`}
       >
-        <DateDivider />
+        {leading}
+        {!hideDate && <DateDivider />}
         {messages.map((m) =>
-          m.role === 'activity' ? <ActivityPill key={m.id} text={m.text} /> : <Bubble key={m.id} message={m} />,
+          m.role === 'activity' ? (
+            <ActivityPill
+              key={m.id}
+              text={m.text}
+              onClick={onActivityClick && m.id === lastActivityId ? onActivityClick : undefined}
+            />
+          ) : (
+            <Bubble key={m.id} message={m} />
+          ),
         )}
         {status === 'thinking' && <TypingDots />}
         <Notices conv={conv} />
         {showChips && <QuickReplies items={quickReplies} onPick={(item) => conv.send(item)} />}
+        {trailing}
       </div>
       {showPill && <NewMessagePill onClick={scrollToBottom} />}
     </div>

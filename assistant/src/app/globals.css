@@ -35,6 +35,18 @@
   }
 }
 
+/* Stage cross-fade (used as animate-[stageIn_200ms_ease-out]). */
+@keyframes stageIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

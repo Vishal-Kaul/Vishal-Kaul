@@ -3,7 +3,7 @@ import { TrustBadge } from './TrustBadge';
 
 export function ChatHeader() {
   return (
-    <header className="flex items-center justify-between border-b border-line px-6 py-5">
+    <header className="flex items-center justify-between border-b border-line px-6 py-[18px]">
       <TrustBadge />
       <button
         type="button"

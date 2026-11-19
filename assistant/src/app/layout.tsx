@@ -14,6 +14,9 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  // The on-screen keyboard shrinks the layout viewport, so the composer
+  // (last child of an h-dvh column) stays above it.
+  interactiveWidget: "resizes-content",
 };
 
 export default function RootLayout({
