@@ -24,6 +24,10 @@ export type ConvState = {
   quickReplies: string[];
   stage: StageState;
   error?: string;
+  /** id of the assistant bubble currently receiving tokens; cleared by MESSAGE_BREAK, SHOW_PROJECT, DONE, FAIL */
+  streamingId?: string;
+  /** monotonically increasing counter used to build deterministic message ids ("m1", "m2", ...) */
+  seq: number;
 };
 
 export type ConvAction =
@@ -35,7 +39,9 @@ export type ConvAction =
   | { type: 'DONE' }
   | { type: 'FAIL'; error: string }
   | { type: 'SET_TAB'; tab: TabId }
-  | { type: 'SHOW_WELCOME' };
+  | { type: 'SHOW_WELCOME' }
+  /** after an error: status -> 'thinking', error cleared, existing partial text kept */
+  | { type: 'RETRY' };
 
 export type ReplyEvent =
   | { type: 'token'; text: string }
