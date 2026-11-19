@@ -35,3 +35,11 @@ Claude API, database, email, inbox, voice, scheduling flow, sound/haptics. These
 - The app lives in `assistant/` so the repo's profile `README.md` stays untouched.
 - Mock reply logic sits behind the same interface the real streaming API will use, so step 2 swaps the source, not the UI.
 - Case-study content for step 1 uses only the facts in CLAUDE.md "Known data fixes" (Turbo Mode, Fisdom revamp); everything else is placeholder text clearly marked as such until `assistant-facts.md` arrives.
+
+## Decisions made during the build
+- **Breakpoint:** chat and stage sit side by side from 1024 px (the 500 px chat card plus a usable stage don't fit at 768). Below 1024 the mobile layout is used, centred at max 640 px on tablets.
+- **Embed:** `?embed=1` hides the assistant's own nav; `frame-ancestors` allows only `https://vishaluxi.framer.website` (add a custom domain when there is one).
+- **Contrast:** the interaction spec's 4.5:1 rule wins over the Figma greys. #9A9A9A stays for decoration; text uses #767676, and small blue text on tinted or grey backgrounds uses #0F6896.
+- **Copy:** the mobile hero line "a message he'll answer himself" became "a message passed straight to him" so it doesn't commit Vishal to replying. To confirm with Vishal.
+- **Retry after a cut-off reply** regenerates the reply; "Continue from where it stopped" needs the real model (step 2).
+- **Not for the public site yet:** replies mention passing questions on, but messages aren't sent until step 3.
