@@ -1,36 +1,59 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Vishal’s Assistant
 
-## Getting Started
+An AI assistant for designer Vishal Kaul’s Framer portfolio. Visitors ask about his work, and the assistant pulls up case studies next to the chat.
 
-First, run the development server:
+**Status: step 1 of 6.** Screens and conversation flow with scripted replies. No real AI, no data saved yet.
+
+## Run locally
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open http://localhost:3000. Add `?embed=1` (http://localhost:3000/?embed=1) to see the layout used inside the Framer iframe: no top nav, full-height chat and stage.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Tests
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `npm test` runs the unit and component tests (Vitest).
+- `npm run e2e` builds the app, starts it on port 3100 and drives it in Chromium with Playwright. `playwright.config.ts` points at a pre-installed Chromium path (`/opt/pw-browsers/...`); on another machine, remove the `executablePath` launch option so Playwright uses its own browser (`npx playwright install chromium`).
+- `e2e/screens.spec.ts` saves screenshots to `e2e/__screens__/` for review by eye. They are not assertions.
 
-## Learn More
+## Deploy to Vercel
 
-To learn more about Next.js, take a look at the following resources:
+1. Import the GitHub repository in Vercel.
+2. Set **Root Directory** to `assistant`.
+3. Framework preset: Next.js.
+4. No environment variables are needed in step 1.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Add to Framer
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Option A: a page with the assistant.
 
-## Deploy on Vercel
+1. Create a page at `/assistant`.
+2. Add an Embed component with the URL `https://<your-vercel-domain>/?embed=1`.
+3. Set width to Fill and height to 100vh (minimum 720).
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Option B: a nav button. Add a button labelled “Talk to my assistant” to the site nav and link it to the `/assistant` page.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+The `frame-ancestors` header in `next.config.ts` decides who may embed the app. It currently allows `vishaluxi.framer.website`, `*.framer.website`, `*.framer.app` and `framer.com`. If the site is served from a custom domain, add that domain to the list, or the embed will be blocked.
+
+## Project structure
+
+- `src/lib`: conversation state and reducer, scripted replies (`mock-source.ts`), project content, and hooks (media query, reduced motion).
+- `src/components/chat`: chat card, message list, composer, quick replies, activity pills.
+- `src/components/stage`: welcome stage, case-study stage, tabs, funnel.
+- `src/components/mobile`: the bottom sheet used for case studies on phones.
+- `e2e`: Playwright tests.
+
+Docs: [`../CLAUDE.md`](../CLAUDE.md) (build spec), [`../docs/spec/INTERACTION-SPEC.md`](../docs/spec/INTERACTION-SPEC.md), [`../docs/figma`](../docs/figma) (design screens).
+
+## What’s next
+
+2. Chat with streaming, the facts file, and tools that drive the stage.
+3. Scheduling and message flow, saved to a database, with an emailed summary.
+4. Inbox screen.
+5. Voice mode.
+6. Guardrail tests: 20 adversarial prompts (pay, phone number, commitments, made-up facts).
+
+Waiting on: `assistant-facts.md`, Claude API key, database, email (Resend).
