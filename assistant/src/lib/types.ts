@@ -24,7 +24,7 @@ export type ConvState = {
   quickReplies: string[];
   stage: StageState;
   error?: string;
-  /** id of the assistant bubble currently receiving tokens; cleared by MESSAGE_BREAK, SHOW_PROJECT, DONE, FAIL */
+  /** id of the assistant bubble currently receiving tokens; cleared by MESSAGE_BREAK, DONE, FAIL, and by SHOW_PROJECT when it switches to a different project */
   streamingId?: string;
   /** monotonically increasing counter used to build deterministic message ids ("m1", "m2", ...) */
   seq: number;
