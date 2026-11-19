@@ -24,15 +24,17 @@ type Props = {
   hideDate?: boolean;
   /** when set, the latest activity pill becomes a button that calls this */
   onActivityClick?: () => void;
+  /** hide quick-reply chips (the visitor is typing) */
+  hideQuickReplies?: boolean;
 };
 
-export function MessageList({ conv, variant = 'desktop', leading, trailing, hideDate, onActivityClick }: Props) {
+export function MessageList({ conv, variant = 'desktop', leading, trailing, hideDate, onActivityClick, hideQuickReplies }: Props) {
   const { messages, status, quickReplies } = conv.state;
   const ref = useRef<HTMLDivElement>(null);
   const atBottom = useRef(true);
   const [showPill, setShowPill] = useState(false);
   const lastLen = messages.length ? messages[messages.length - 1].text.length : 0;
-  const showChips = status === 'idle' && quickReplies.length > 0;
+  const showChips = status === 'idle' && quickReplies.length > 0 && !hideQuickReplies;
 
   function scrollToBottom() {
     const el = ref.current;
@@ -66,18 +68,21 @@ export function MessageList({ conv, variant = 'desktop', leading, trailing, hide
     } else {
       setShowPill(true);
     }
-  }, [messages.length, lastLen, lastRole, status, quickReplies.length, conv.slow]);
+  }, [messages.length, lastLen, lastRole, status, quickReplies.length, conv.slow, hideQuickReplies]);
 
   return (
     <div className="relative min-h-0 flex-1">
       <div
         ref={ref}
-        role="log"
-        aria-label="Conversation"
-        aria-busy={status === 'streaming'}
         onScroll={onScroll}
         className={`flex h-full flex-col gap-4 overflow-y-auto ${variant === 'mobile' ? 'px-4 pb-4 pt-1' : 'px-6 py-6'}`}
       >
+        <div
+          role="log"
+          aria-label="Conversation"
+          aria-busy={status === 'streaming'}
+          className="flex flex-col gap-4"
+        >
         {leading}
         {!hideDate && <DateDivider />}
         {messages.map((m) =>
@@ -92,6 +97,7 @@ export function MessageList({ conv, variant = 'desktop', leading, trailing, hide
           ),
         )}
         {status === 'thinking' && <TypingDots />}
+        </div>
         <Notices conv={conv} />
         {showChips && <QuickReplies items={quickReplies} onPick={(item) => conv.send(item)} />}
         {trailing}

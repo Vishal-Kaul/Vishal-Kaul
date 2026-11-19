@@ -1,13 +1,11 @@
 import type { NextConfig } from "next";
 
-// Only Vishal's Framer site (and this app itself) may embed the assistant.
+// Only Vishal's published Framer site (and this app itself) may embed the assistant.
+// If the site gets a custom domain, add it here. The Framer editor preview won't
+// render the embed; test on the published site.
 const FRAME_ANCESTORS = [
   "'self'",
   "https://vishaluxi.framer.website",
-  "https://*.framer.website",
-  "https://*.framer.app",
-  "https://framer.com",
-  "https://*.framer.com",
 ].join(" ");
 
 const nextConfig: NextConfig = {

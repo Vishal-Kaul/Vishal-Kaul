@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import type { ReactNode, Ref } from 'react';
 import type { Conversation } from '@/lib/types';
 import { ChatFooter } from './ChatFooter';
@@ -29,12 +30,15 @@ export function ChatCard({
   /** makes the latest activity pill a button (mobile: reopen the case-study sheet) */
   onActivityClick?: () => void;
 }) {
-  const listProps = { conv, leading, trailing, hideDate, onActivityClick };
+  const [typing, setTyping] = useState(false);
+  const busy = conv.state.status === 'thinking' || conv.state.status === 'streaming';
+  const listProps = { conv, leading, trailing, hideDate, onActivityClick, hideQuickReplies: typing };
+  const composerProps = { onSend: conv.send, inputRef: composerRef, disabled: busy, onDraftChange: setTyping };
   if (variant === 'mobile') {
     return (
       <div className="flex h-full flex-col bg-white pb-[max(12px,env(safe-area-inset-bottom))]">
         <MessageList {...listProps} variant="mobile" />
-        <Composer variant="mobile" onSend={conv.send} inputRef={composerRef} />
+        <Composer variant="mobile" {...composerProps} />
         <ChatFooter variant="mobile" />
         <StatusAnnouncer conv={conv} />
       </div>
@@ -47,7 +51,7 @@ export function ChatCard({
     >
       <ChatHeader />
       <MessageList {...listProps} variant="desktop" />
-      <Composer variant="desktop" onSend={conv.send} inputRef={composerRef} />
+      <Composer variant="desktop" {...composerProps} />
       <div className="pb-[19px]">
         <ChatFooter variant="desktop" />
       </div>

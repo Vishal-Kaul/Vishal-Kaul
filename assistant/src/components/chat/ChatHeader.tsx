@@ -9,7 +9,7 @@ export function ChatHeader() {
         type="button"
         aria-disabled="true"
         title="Voice is coming soon"
-        className="inline-flex h-9 items-center gap-2 rounded-full border border-line px-4 text-[15px] font-medium text-brand"
+        className="inline-flex h-11 items-center gap-2 rounded-full border border-line px-3.5 text-[15px] font-medium text-brand"
       >
         <MicIcon size={16} />
         Voice

@@ -45,7 +45,7 @@ export function CaseStudyStage({ project, tab, onTab, variant, onClose }: Props)
           {p.name}
         </h2>
         <p className="mt-4 text-[18px] text-muted">Details coming soon.</p>
-        <p className="mt-2 text-[15px] text-subtle">I’ll fill this in once Vishal shares the full case study.</p>
+        <p className="mt-2 text-[15px] text-subtle-text">I’ll fill this in once Vishal shares the full case study.</p>
       </div>
     );
   } else {
@@ -72,12 +72,12 @@ export function CaseStudyStage({ project, tab, onTab, variant, onClose }: Props)
                   key={dark ? 'after' : 'before'}
                   className={`rounded-[20px] ${sheet ? 'p-4' : 'p-5 xl:p-6'} ${dark ? 'bg-ink text-white' : 'bg-white'}`}
                 >
-                  <p className={`text-[13px] font-medium ${dark ? 'text-white/80' : 'text-subtle'}`}>
+                  <p className={`text-[13px] font-medium ${dark ? 'text-white/80' : 'text-subtle-text'}`}>
                     {sheet ? c.shortKicker : c.kicker}
                   </p>
                   <p
                     className={`font-bold leading-tight ${sheet ? 'text-[30px]' : 'text-[32px] xl:text-[44px]'} ${
-                      dark ? 'text-brand-soft' : 'text-subtle'
+                      dark ? 'text-brand-soft' : 'text-subtle-text'
                     }`}
                   >
                     {c.value}
@@ -93,7 +93,7 @@ export function CaseStudyStage({ project, tab, onTab, variant, onClose }: Props)
         {content.funnel && <Funnel funnel={content.funnel} variant={variant} />}
         {content.takeaway && (
           <div className="border-l-[3px] border-brand pl-4">
-            <p className="text-[13px] font-medium text-brand">Takeaway</p>
+            <p className="text-[13px] font-medium text-brand-text">Takeaway</p>
             <p className={`font-semibold text-ink ${sheet ? 'text-[15px] leading-[21px]' : 'text-[17px]'}`}>
               {sheet ? content.takeaway.shortText : content.takeaway.text}
             </p>
@@ -128,13 +128,13 @@ export function CaseStudyStage({ project, tab, onTab, variant, onClose }: Props)
       {sheet ? (
         <div className="mt-9 flex flex-col items-center gap-3">
           {link}
-          <button type="button" onClick={onClose} className="h-11 text-[15px] font-semibold text-brand">
+          <button type="button" onClick={onClose} className="h-11 text-[15px] font-semibold text-brand-text">
             Back to chat
           </button>
         </div>
       ) : (
         <div className="mt-auto flex items-center justify-between gap-4 pt-6">
-          <span className="text-[13px] font-medium text-subtle">{source}</span>
+          <span className="text-[13px] font-medium text-subtle-text">{source}</span>
           {link}
         </div>
       )}

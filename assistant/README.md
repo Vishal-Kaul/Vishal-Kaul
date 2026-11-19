@@ -36,7 +36,11 @@ Option A: a page with the assistant.
 
 Option B: a nav button. Add a button labelled “Talk to my assistant” to the site nav and link it to the `/assistant` page.
 
-The `frame-ancestors` header in `next.config.ts` decides who may embed the app. It currently allows `vishaluxi.framer.website`, `*.framer.website`, `*.framer.app` and `framer.com`. If the site is served from a custom domain, add that domain to the list, or the embed will be blocked.
+The `frame-ancestors` header in `next.config.ts` allows only `'self'` and `https://vishaluxi.framer.website`. If the site gets a custom domain, edit `next.config.ts` and add it, or the embed will be blocked. The Framer editor preview won’t render the embed; test on the published site.
+
+“Open full case study” opens a new tab, so the Framer Embed must allow popups. Framer’s Embed allows them by default; if you use a custom sandbox, include `allow-popups` and `allow-popups-to-escape-sandbox`.
+
+**Warning:** Don’t put step 1 on the public site: replies mention passing questions to Vishal, but messages aren’t sent until step 3.
 
 ## Project structure
 

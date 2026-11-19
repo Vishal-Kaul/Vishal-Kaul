@@ -9,7 +9,7 @@ export function MobileHero() {
         <p className="text-[14px] font-semibold text-white/70">Meet the assistant</p>
         <h2 className="mt-3 text-[44px] font-bold leading-[1.05] tracking-[-0.03em]">Ask me about Vishal’s work.</h2>
         <p className="mt-3.5 text-[15px] leading-[22px] text-white/65">
-          Real projects, his availability, and a message he’ll answer himself.
+          Real projects, his availability, and a message passed straight to him.
         </p>
         <div className="mt-3 grid grid-cols-2 gap-3">
           {(['turbo-mode', 'fisdom'] as const).map((id) => (

@@ -115,7 +115,48 @@ describe('ChatCard', () => {
     expect(screen.getAllByText('Something went wrong on my side.').length).toBeGreaterThan(0);
     await userEvent.click(screen.getByRole('button', { name: 'Retry' }));
     expect(conv.retry).toHaveBeenCalled();
-    expect(screen.getByRole('link', { name: 'Or leave a message for Vishal' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Or leave a message for Vishal' }));
+    expect(conv.send).toHaveBeenCalledWith('Leave a message');
+  });
+
+  it('keeps the draft and ignores Enter while a reply is streaming', async () => {
+    const conv = makeConv({ status: 'streaming', quickReplies: [] });
+    render(<ChatCard conv={conv} variant="desktop" />);
+    const box = screen.getByLabelText('Message Vishal’s assistant') as HTMLTextAreaElement;
+    await userEvent.type(box, 'second{Enter}');
+    expect(conv.send).not.toHaveBeenCalled();
+    expect(box.value).toBe('second');
+    const send = screen.getByRole('button', { name: 'Send' });
+    expect(send).toHaveAttribute('aria-disabled', 'true');
+    expect(send).toHaveAttribute('title', 'Wait for the reply to finish');
+    await userEvent.click(send);
+    expect(conv.send).not.toHaveBeenCalled();
+  });
+
+  it('keeps the draft when send returns false', async () => {
+    const conv = makeConv();
+    conv.send.mockReturnValue(false);
+    render(<ChatCard conv={conv} variant="desktop" />);
+    const box = screen.getByLabelText('Message Vishal’s assistant') as HTMLTextAreaElement;
+    await userEvent.type(box, 'hello{Enter}');
+    expect(conv.send).toHaveBeenCalledWith('hello');
+    expect(box.value).toBe('hello');
+  });
+
+  it('hides quick replies while the visitor is typing', async () => {
+    render(<ChatCard conv={makeConv()} variant="desktop" />);
+    expect(screen.getByRole('button', { name: 'Just curious' })).toBeInTheDocument();
+    const box = screen.getByLabelText('Message Vishal’s assistant');
+    await userEvent.type(box, 'h');
+    expect(screen.queryByRole('button', { name: 'Just curious' })).not.toBeInTheDocument();
+    await userEvent.clear(box);
+    expect(screen.getByRole('button', { name: 'Just curious' })).toBeInTheDocument();
+  });
+
+  it('announces slow replies once, outside the log', () => {
+    render(<ChatCard conv={makeConv({ status: 'thinking' }, { slow: 'long' })} variant="desktop" />);
+    expect(within(screen.getByRole('log')).queryByText('This is taking longer than usual.')).toBeNull();
+    expect(screen.getByText('This is taking longer than usual')).toBeInTheDocument();
   });
 
   it('slow long', async () => {
@@ -139,7 +180,7 @@ describe('ChatCard', () => {
   it('shows New message pill when scrolled up', async () => {
     const conv = makeConv();
     const { rerender } = render(<ChatCard conv={conv} variant="desktop" />);
-    const log = screen.getByRole('log');
+    const log = screen.getByRole('log').parentElement as HTMLElement;
     Object.defineProperty(log, 'scrollHeight', { configurable: true, value: 1000 });
     Object.defineProperty(log, 'clientHeight', { configurable: true, value: 300 });
     log.scrollTop = 0;
@@ -160,11 +201,11 @@ describe('ChatCard', () => {
     expect(screen.queryByText('AI assistant for Vishal')).not.toBeInTheDocument();
     expect(within(document.body).queryByRole('region')).not.toBeInTheDocument();
   });
-  it('renders leading content first and trailing content last in the log, and can hide the date', async () => {
+  it('renders leading content first in the log and trailing content last, and can hide the date', async () => {
     render(<ChatCard conv={makeConv()} variant="mobile" leading={<p>Hero</p>} trailing={<p>End</p>} hideDate />);
     const log = screen.getByRole('log');
     expect(log.firstElementChild).toHaveTextContent('Hero');
-    expect(log.lastElementChild).toHaveTextContent('End');
+    expect(log.parentElement?.lastElementChild).toHaveTextContent('End');
     // give DateDivider's effect a chance to fill in a label if it were rendered
     await screen.findByText('Hero');
     expect(within(log).queryByText(/^Today · /)).not.toBeInTheDocument();

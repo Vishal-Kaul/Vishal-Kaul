@@ -38,7 +38,7 @@ export function Tabs({
     <div
       role="tablist"
       aria-label="Case study sections"
-      className="flex flex-nowrap gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      className="-m-1 flex flex-nowrap gap-2 overflow-x-auto p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
     >
       {TAB_ORDER.map((t, i) => {
         const selected = t === value;

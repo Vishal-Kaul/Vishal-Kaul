@@ -8,13 +8,14 @@ import { ArrowUpIcon, MicIcon } from './icons';
 const MAX_HEIGHT = 110; // 5 lines at 22px
 
 type Props = {
-  onSend: (text: string) => void;
+  onSend: (text: string) => boolean | void;
   disabled?: boolean;
+  onDraftChange?: (hasText: boolean) => void;
   variant: 'desktop' | 'mobile';
   inputRef?: Ref<HTMLTextAreaElement>;
 };
 
-export function Composer({ onSend, disabled, variant, inputRef }: Props) {
+export function Composer({ onSend, disabled, variant, inputRef, onDraftChange }: Props) {
   const [draft, setDraft] = useState('');
   const localRef = useRef<HTMLTextAreaElement | null>(null);
   const noticeId = useId();
@@ -38,11 +39,16 @@ export function Composer({ onSend, disabled, variant, inputRef }: Props) {
     el.style.height = `${Math.min(el.scrollHeight, MAX_HEIGHT)}px`;
   }, [draft]);
 
+  function updateDraft(value: string) {
+    setDraft(value);
+    onDraftChange?.(value.trim().length > 0);
+  }
+
   function send() {
     const text = draft.trim().slice(0, MAX_INPUT);
     if (!text || disabled) return;
-    onSend(text);
-    setDraft('');
+    if (onSend(text) === false) return;
+    updateDraft('');
     localRef.current?.focus();
   }
 
@@ -69,12 +75,12 @@ export function Composer({ onSend, disabled, variant, inputRef }: Props) {
           ref={setRefs}
           rows={1}
           value={draft}
-          onChange={(e) => setDraft(e.target.value)}
+          onChange={(e) => updateDraft(e.target.value)}
           onKeyDown={onKeyDown}
           placeholder={mobile ? 'Type, or tap the mic to talk' : 'Type a message, or tap the mic to talk'}
           aria-label="Message Vishal’s assistant"
           aria-describedby={tooLong ? noticeId : undefined}
-          className={`min-w-0 flex-1 resize-none bg-transparent text-[15px] leading-[22px] text-ink placeholder:text-subtle ${
+          className={`min-w-0 flex-1 resize-none bg-transparent text-[15px] leading-[22px] text-ink placeholder:text-subtle-text ${
             mobile ? 'py-3 focus-visible:outline-none' : 'py-3 pl-[18px]'
           }`}
         />
@@ -82,6 +88,8 @@ export function Composer({ onSend, disabled, variant, inputRef }: Props) {
           <button
             type="button"
             aria-label="Send"
+            aria-disabled={disabled ? 'true' : undefined}
+            title={disabled ? 'Wait for the reply to finish' : undefined}
             onClick={send}
             className="flex size-[46px] shrink-0 items-center justify-center rounded-full bg-ink text-white"
           >

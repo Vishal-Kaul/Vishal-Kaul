@@ -10,5 +10,5 @@ export function DateDivider({ now }: { now?: Date }) {
     const d = now ?? new Date();
     setLabel(`Today · ${pad(d.getHours())}:${pad(d.getMinutes())}`);
   }, [now]);
-  return <div className="text-center text-[12px] text-subtle">{label}</div>;
+  return <div className="text-center text-[12px] text-subtle-text">{label}</div>;
 }

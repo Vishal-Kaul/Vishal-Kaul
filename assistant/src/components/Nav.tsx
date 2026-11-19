@@ -7,7 +7,7 @@ export function Nav({ onTalk }: { onTalk: () => void }) {
     <header className="flex h-[76px] shrink-0 items-center justify-between px-10">
       <p className="flex items-baseline">
         <span className="text-[20px] font-bold tracking-[-0.02em] text-ink">Vishal Kaul</span>
-        <span className="ml-3 text-[15px] font-medium text-subtle">Senior Product Designer</span>
+        <span className="ml-3 text-[15px] font-medium text-subtle-text">Senior Product Designer</span>
       </p>
       <nav aria-label="Portfolio" className="flex items-center">
         <ul className="flex items-center gap-8">
@@ -22,7 +22,7 @@ export function Nav({ onTalk }: { onTalk: () => void }) {
         <button
           type="button"
           onClick={onTalk}
-          className="ml-8 h-[38px] rounded-full bg-brand px-[18px] text-[14px] font-semibold tracking-normal text-white"
+          className="ml-8 h-11 rounded-full bg-brand px-[18px] text-[14px] font-semibold tracking-normal text-white"
         >
           Talk to my assistant
         </button>

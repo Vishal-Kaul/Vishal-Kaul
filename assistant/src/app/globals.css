@@ -5,9 +5,11 @@
   --color-wash: #F5F5F5;
   --color-ink: #1A1A1A;
   --color-muted: #6B6B6B;
-  --color-subtle: #9A9A9A;
+  --color-subtle: #9A9A9A; /* decorative / non-text only */
+  --color-subtle-text: #767676;
   --color-line: #E6E6E6;
   --color-brand: #127BB0;
+  --color-brand-text: #0F6896;
   --color-brand-tint: #E6F1F7;
   --color-stage: #1A1A1A;
   --color-positive: #2E7D5B;

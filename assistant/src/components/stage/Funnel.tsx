@@ -9,7 +9,7 @@ export function Funnel({ funnel, variant }: { funnel: FunnelData; variant: 'desk
       <div className="rounded-[20px] bg-white px-5 pb-3 pt-[18px]">
         <div className="flex items-baseline justify-between gap-3">
           <h3 className="text-[16px] font-semibold leading-[22px] text-ink">{funnel.shortTitle}</h3>
-          <span className="text-[13px] font-medium text-subtle">{funnel.shortMeta}</span>
+          <span className="text-[13px] font-medium text-subtle-text">{funnel.shortMeta}</span>
         </div>
         <div className="mt-2.5 h-3 rounded-full bg-wash">
           <div
@@ -31,7 +31,7 @@ export function Funnel({ funnel, variant }: { funnel: FunnelData; variant: 'desk
     <div className="rounded-[20px] bg-white px-6 py-[22px]">
       <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
         <h3 className="text-[17px] font-semibold text-ink">{funnel.title}</h3>
-        <span className="text-[13px] font-medium text-subtle">{funnel.meta}</span>
+        <span className="text-[13px] font-medium text-subtle-text">{funnel.meta}</span>
       </div>
       <div className="mt-[11px] grid grid-cols-[132px_1fr_88px] items-center gap-x-4 gap-y-[11px] xl:grid-cols-[142px_1fr_100px] xl:gap-x-6">
         {funnel.rows.map((r, i) => (

@@ -36,6 +36,7 @@ describe('BottomSheet', () => {
     const { onClose } = setup();
     fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' });
     expect(onClose).toHaveBeenCalledTimes(1);
+    expect(onClose).toHaveBeenCalledWith('escape');
   });
 
   it('is not in the accessibility tree when closed', () => {
@@ -53,6 +54,7 @@ describe('BottomSheet', () => {
     fireEvent.pointerMove(handle, { clientY: 450, pointerId: 1, pointerType: 'touch' });
     fireEvent.pointerUp(handle, { clientY: 450, pointerId: 1, pointerType: 'touch' });
     expect(onClose).toHaveBeenCalledTimes(1);
+    expect(onClose).toHaveBeenCalledWith('swipe');
   });
 
   it('a small drag snaps back without closing', () => {

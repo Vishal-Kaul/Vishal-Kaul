@@ -12,6 +12,8 @@ const TOP_EXPANDED = 'max(12px, env(safe-area-inset-top))';
 /** How far the default position sits below the expanded one. */
 const DEFAULT_OFFSET = `calc(${TOP_DEFAULT} - ${TOP_EXPANDED})`;
 
+export type CloseReason = 'escape' | 'button' | 'swipe';
+
 const EXPAND_PX = 80; // drag up further than this: expand
 const DISMISS_PX = 120; // drag down further than this: step down (expanded → default → closed)
 const FLING_PX_PER_MS = 0.5; // or a downward fling faster than this
@@ -46,7 +48,7 @@ export function BottomSheet({
   children,
 }: {
   open: boolean;
-  onClose: () => void;
+  onClose: (reason: CloseReason) => void;
   label: string;
   children: ReactNode;
 }) {
@@ -93,7 +95,7 @@ export function BottomSheet({
     const onKey = (e: globalThis.KeyboardEvent) => {
       if (e.key === 'Escape' && !e.defaultPrevented) {
         e.preventDefault();
-        onCloseRef.current();
+        onCloseRef.current('escape');
       }
     };
     document.addEventListener('keydown', onKey);
@@ -189,7 +191,7 @@ export function BottomSheet({
       setExpanded(true);
     } else if (dy > DISMISS_PX || (velocity > FLING_PX_PER_MS && dy > FLING_MIN_PX)) {
       if (expanded) setExpanded(false);
-      else onClose();
+      else onClose('swipe');
     }
   }
 
@@ -253,7 +255,7 @@ export function BottomSheet({
         onKeyUp={(e) => {
           if (e.key === ' ') e.preventDefault();
         }}
-        className="flex h-6 w-full shrink-0 cursor-grab touch-none items-center justify-center rounded-t-[24px] active:cursor-grabbing"
+        className="flex h-11 w-full shrink-0 cursor-grab touch-none items-center justify-center rounded-t-[24px] active:cursor-grabbing"
       >
         <span aria-hidden="true" className="h-1 w-10 rounded-full bg-[#D9D9D9]" />
       </button>
