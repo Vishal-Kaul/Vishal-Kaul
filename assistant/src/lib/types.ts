@@ -24,8 +24,14 @@ export type ConvState = {
   quickReplies: string[];
   stage: StageState;
   error?: string;
-  /** id of the assistant bubble currently receiving tokens; cleared by MESSAGE_BREAK, DONE, FAIL, and by SHOW_PROJECT when it switches to a different project */
+  /** id of the assistant bubble currently receiving tokens; cleared by MESSAGE_BREAK, DONE, FAIL, RETRY and every SHOW_PROJECT */
   streamingId?: string;
+  /**
+   * Counts SHOW_PROJECT actions, including ones for the project already on
+   * stage (which change nothing else). The mobile layout opens the case-study
+   * sheet whenever it increases; tab switches never change it.
+   */
+  showSeq: number;
   /** monotonically increasing counter used to build deterministic message ids ("m1", "m2", ...) */
   seq: number;
 };
@@ -40,7 +46,13 @@ export type ConvAction =
   | { type: 'FAIL'; error: string }
   | { type: 'SET_TAB'; tab: TabId }
   | { type: 'SHOW_WELCOME' }
-  /** after an error: status -> 'thinking', error cleared, existing partial text kept */
+  /**
+   * Regenerate the reply to the last visitor message. From error, thinking or
+   * streaming: removes the assistant bubbles after the last user message (the
+   * failed or abandoned reply), clears the error, status -> 'thinking'.
+   * Activity rows and the stage are kept. No-op when idle.
+   * (Continuing from a partial reply arrives in step 2 with a real model.)
+   */
   | { type: 'RETRY' };
 
 export type ReplyEvent =
@@ -49,8 +61,12 @@ export type ReplyEvent =
   | { type: 'quick_replies'; items: string[] }
   | { type: 'break' };
 
+/** One turn of model-facing history: activity rows and partial replies are never included. */
+export type ChatTurn = { role: 'user' | 'assistant'; content: string };
+
 export interface ReplySource {
-  stream(history: Message[], signal: AbortSignal): AsyncIterable<ReplyEvent>;
+  /** `history` ends with the visitor message being answered. */
+  stream(history: ChatTurn[], signal: AbortSignal): AsyncIterable<ReplyEvent>;
 }
 
 export type SlowLevel = 'none' | 'still' | 'long';
@@ -58,7 +74,8 @@ export type SlowLevel = 'none' | 'still' | 'long';
 /** What useConversation returns; chat UI and layouts consume this. */
 export type Conversation = {
   state: ConvState;
-  send(text: string): void;
+  /** true if the message was accepted (a run started); false if ignored (empty after trimming, or a reply is in progress) */
+  send(text: string): boolean;
   setTab(tab: TabId): void;
   showWelcome(): void;
   retry(): void;

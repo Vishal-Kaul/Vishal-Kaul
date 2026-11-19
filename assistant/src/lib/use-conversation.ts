@@ -2,17 +2,24 @@
 
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import { initialState, reducer } from './conversation';
-import type { ConvAction, ConvState, Conversation, Message, ReplySource, SlowLevel, TabId } from './types';
+import type { ChatTurn, ConvAction, ConvState, Conversation, Message, ReplySource, SlowLevel, TabId } from './types';
 
 export const STREAM_ERROR = 'Something went wrong on my side.';
 export const SLOW_STILL_MS = 8000;
 export const SLOW_LONG_MS = 20000;
 
-function historyUpToLastUser(messages: Message[]): Message[] {
-  for (let i = messages.length - 1; i >= 0; i--) {
-    if (messages[i].role === 'user') return messages.slice(0, i + 1);
+/**
+ * Model-facing history: user and assistant turns only. Activity rows ("Pulling
+ * up…") are UI, and partial replies (a stream that failed part-way) are not
+ * something the assistant actually said, so both are left out.
+ */
+export function toChatHistory(messages: Message[]): ChatTurn[] {
+  const turns: ChatTurn[] = [];
+  for (const m of messages) {
+    if (m.role === 'activity' || m.partial) continue;
+    turns.push({ role: m.role, content: m.text });
   }
-  return messages;
+  return turns;
 }
 
 /**
@@ -44,7 +51,7 @@ export function useConversation(source: ReplySource): Conversation {
   }, []);
 
   const startRun = useCallback(
-    (history: Message[]) => {
+    (history: ChatTurn[]) => {
       controllerRef.current?.abort();
       const id = ++runIdRef.current;
       const controller = new AbortController();
@@ -53,11 +60,14 @@ export function useConversation(source: ReplySource): Conversation {
       const isStale = () => id !== runIdRef.current || controller.signal.aborted;
 
       void (async () => {
+        // A reply with no text at all is a failure, even if it moved the stage.
+        let spoke = false;
         try {
           for await (const ev of sourceRef.current.stream(history, controller.signal)) {
             if (isStale()) return;
             switch (ev.type) {
               case 'token':
+                if (ev.text) spoke = true;
                 apply({ type: 'TOKEN', text: ev.text });
                 break;
               case 'show_project':
@@ -72,7 +82,7 @@ export function useConversation(source: ReplySource): Conversation {
             }
           }
           if (isStale()) return;
-          apply({ type: 'DONE' });
+          apply(spoke ? { type: 'DONE' } : { type: 'FAIL', error: STREAM_ERROR });
         } catch {
           if (isStale()) return;
           apply({ type: 'FAIL', error: STREAM_ERROR });
@@ -84,29 +94,30 @@ export function useConversation(source: ReplySource): Conversation {
     [apply],
   );
 
+  /** Returns false when the message was ignored (empty, or a reply is in progress), so the composer can keep the draft. */
   const send = useCallback(
-    (text: string) => {
+    (text: string): boolean => {
       const prev = stateRef.current;
-      if (reducer(prev, { type: 'SEND', text }) === prev) return;
+      if (reducer(prev, { type: 'SEND', text }) === prev) return false;
       apply({ type: 'SEND', text });
-      startRun(stateRef.current.messages);
+      startRun(toChatHistory(stateRef.current.messages));
+      return true;
     },
     [apply, startRun],
   );
 
+  /**
+   * Regenerate the reply to the last visitor message: after an error, or as
+   * "Try again" on a slow reply (the current run is dropped). RETRY removes
+   * the failed/abandoned assistant bubbles, so the history ends with the
+   * visitor's message, same as on send. Continue from partial arrives in
+   * step 2 with a real model.
+   */
   const retry = useCallback(() => {
-    const s = stateRef.current;
-    if (s.status === 'error') {
-      controllerRef.current?.abort();
-      apply({ type: 'RETRY' });
-    } else if (s.status === 'thinking' || s.status === 'streaming') {
-      // "Try again" on a slow reply: drop the current run and start over.
-      controllerRef.current?.abort();
-      apply({ type: 'MESSAGE_BREAK' });
-    } else {
-      return;
-    }
-    startRun(historyUpToLastUser(stateRef.current.messages));
+    if (stateRef.current.status === 'idle') return;
+    controllerRef.current?.abort();
+    apply({ type: 'RETRY' });
+    startRun(toChatHistory(stateRef.current.messages));
   }, [apply, startRun]);
 
   const setTab = useCallback((tab: TabId) => apply({ type: 'SET_TAB', tab }), [apply]);

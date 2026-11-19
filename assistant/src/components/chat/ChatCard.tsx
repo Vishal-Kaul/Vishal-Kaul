@@ -17,6 +17,7 @@ export function ChatCard({
   trailing,
   hideDate,
   onActivityClick,
+  composerInert,
 }: {
   conv: Conversation;
   variant: 'desktop' | 'mobile';
@@ -29,6 +30,8 @@ export function ChatCard({
   hideDate?: boolean;
   /** makes the latest activity pill a button (mobile: reopen the case-study sheet) */
   onActivityClick?: () => void;
+  /** makes the composer and footer inert (mobile: while the case-study sheet covers them) */
+  composerInert?: boolean;
 }) {
   const [typing, setTyping] = useState(false);
   const busy = conv.state.status === 'thinking' || conv.state.status === 'streaming';
@@ -38,8 +41,10 @@ export function ChatCard({
     return (
       <div className="flex h-full flex-col bg-white pb-[max(12px,env(safe-area-inset-bottom))]">
         <MessageList {...listProps} variant="mobile" />
-        <Composer variant="mobile" {...composerProps} />
-        <ChatFooter variant="mobile" />
+        <div inert={composerInert || undefined}>
+          <Composer variant="mobile" {...composerProps} />
+          <ChatFooter variant="mobile" />
+        </div>
         <StatusAnnouncer conv={conv} />
       </div>
     );

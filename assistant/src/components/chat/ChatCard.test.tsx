@@ -18,7 +18,7 @@ function makeConv(partial: Partial<ConvState> = {}, extra: { slow?: SlowLevel } 
       stage: { view: 'welcome' },
       ...partial,
     } as ConvState,
-    send: vi.fn(),
+    send: vi.fn(() => true),
     setTab: vi.fn(),
     showWelcome: vi.fn(),
     retry: vi.fn(),

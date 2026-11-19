@@ -74,6 +74,7 @@ export function MessageList({ conv, variant = 'desktop', leading, trailing, hide
     <div className="relative min-h-0 flex-1">
       <div
         ref={ref}
+        data-chat-scroll
         onScroll={onScroll}
         className={`flex h-full flex-col gap-4 overflow-y-auto ${variant === 'mobile' ? 'px-4 pb-4 pt-1' : 'px-6 py-6'}`}
       >

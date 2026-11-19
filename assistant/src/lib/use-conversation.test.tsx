@@ -1,17 +1,17 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { StrictMode, type ReactNode } from 'react';
 import { act, renderHook, waitFor } from '@testing-library/react';
-import { useConversation } from './use-conversation';
+import { STREAM_ERROR, useConversation } from './use-conversation';
 import { createMockSource } from './mock-source';
 import { GREETING } from './conversation';
-import type { Message, ReplyEvent, ReplySource } from './types';
+import type { ChatTurn, ReplyEvent, ReplySource } from './types';
 
 const fast = () => createMockSource({ tokenDelayMs: 0, firstTokenDelayMs: 0 });
 
 /** A source whose stream never yields; it resolves (ends silently) only when aborted. */
 function hangingSource() {
   const signals: AbortSignal[] = [];
-  const histories: Message[][] = [];
+  const histories: ChatTurn[][] = [];
   const source: ReplySource = {
     async *stream(history, signal) {
       signals.push(signal);
@@ -28,7 +28,7 @@ function hangingSource() {
 /** A source that throws on the first call, then delegates to the mock. */
 function flakySource(failAfter: ReplyEvent[] = []) {
   let calls = 0;
-  const histories: Message[][] = [];
+  const histories: ChatTurn[][] = [];
   const mock = fast();
   const source: ReplySource = {
     async *stream(history, signal) {
@@ -88,7 +88,130 @@ describe('useConversation', () => {
     const { result } = renderHook(() => useConversation(source));
     act(() => result.current.send('  hello  '));
     expect(histories).toHaveLength(1);
-    expect(histories[0].map((m) => m.text)).toEqual([GREETING, 'hello']);
+    expect(histories[0]).toEqual([
+      { role: 'assistant', content: GREETING },
+      { role: 'user', content: 'hello' },
+    ]);
+  });
+
+  it('history drops activity rows and partial replies (send and retry alike)', async () => {
+    const histories: ChatTurn[][] = [];
+    let calls = 0;
+    const source: ReplySource = {
+      async *stream(history) {
+        calls += 1;
+        histories.push(history);
+        if (calls === 1) {
+          yield { type: 'token', text: 'Turbo intro. ' };
+          yield { type: 'show_project', project: 'turbo-mode' };
+          yield { type: 'token', text: 'Done.' };
+          return;
+        }
+        if (calls === 2) {
+          yield { type: 'token', text: 'Half ' };
+          throw new Error('down');
+        }
+        yield { type: 'token', text: 'Whole.' };
+      },
+    };
+    const { result } = renderHook(() => useConversation(source));
+    act(() => void result.current.send('turbo'));
+    await waitFor(() => expect(result.current.state.status).toBe('idle'));
+    act(() => void result.current.send('more'));
+    await waitFor(() => expect(result.current.state.status).toBe('error'));
+    act(() => result.current.retry());
+    await waitFor(() => expect(result.current.state.status).toBe('idle'));
+    const expected: ChatTurn[] = [
+      { role: 'assistant', content: GREETING },
+      { role: 'user', content: 'turbo' },
+      { role: 'assistant', content: 'Turbo intro. ' },
+      { role: 'assistant', content: 'Done.' },
+      { role: 'user', content: 'more' },
+    ];
+    expect(histories[1]).toEqual(expected);
+    expect(histories[2]).toEqual(expected);
+    for (const h of histories) {
+      expect(h.every((t) => t.role === 'user' || t.role === 'assistant')).toBe(true);
+      expect(h.some((t) => t.content.startsWith('Pulling up'))).toBe(false);
+    }
+  });
+
+  it('send returns true when accepted, false when ignored (empty or busy)', () => {
+    const { source } = hangingSource();
+    const { result } = renderHook(() => useConversation(source));
+    let r: boolean[] = [];
+    act(() => {
+      r = [result.current.send('   '), result.current.send('first'), result.current.send('second')];
+    });
+    expect(r).toEqual([false, true, false]);
+  });
+
+  it('a run that ends with no tokens fails (show_project and quick_replies alone do not count)', async () => {
+    const source: ReplySource = {
+      async *stream() {
+        yield { type: 'show_project', project: 'fisdom' };
+        yield { type: 'quick_replies', items: ['A'] };
+      },
+    };
+    const { result } = renderHook(() => useConversation(source));
+    act(() => void result.current.send('hi'));
+    await waitFor(() => expect(result.current.state.status).toBe('error'));
+    expect(result.current.state.error).toBe(STREAM_ERROR);
+  });
+
+  it('a run that yields nothing at all fails', async () => {
+    const source: ReplySource = {
+      async *stream() {
+        return;
+      },
+    };
+    const { result } = renderHook(() => useConversation(source));
+    act(() => void result.current.send('hi'));
+    await waitFor(() => expect(result.current.state.status).toBe('error'));
+    expect(result.current.state.error).toBe(STREAM_ERROR);
+  });
+
+  it('retry regenerates: "Partial answer " then a throw, then retry leaves exactly one reply', async () => {
+    let calls = 0;
+    const source: ReplySource = {
+      async *stream() {
+        calls += 1;
+        yield { type: 'token', text: 'Partial ' };
+        yield { type: 'token', text: 'answer ' };
+        if (calls === 1) throw new Error('down');
+        yield { type: 'token', text: 'in full.' };
+      },
+    };
+    const { result } = renderHook(() => useConversation(source));
+    act(() => void result.current.send('question'));
+    await waitFor(() => expect(result.current.state.status).toBe('error'));
+    expect(result.current.state.messages[2]).toMatchObject({ text: 'Partial answer ', partial: true });
+    act(() => result.current.retry());
+    await waitFor(() => expect(result.current.state.status).toBe('idle'));
+    const s = result.current.state;
+    const afterUser = s.messages.slice(s.messages.findIndex((m) => m.role === 'user') + 1);
+    expect(afterUser).toHaveLength(1);
+    expect(afterUser[0]).toMatchObject({ role: 'assistant', text: 'Partial answer in full.' });
+    expect(afterUser[0].partial).toBeUndefined();
+  });
+
+  it('asking about the project already on stage still splits the reply into two bubbles', async () => {
+    const { result } = renderHook(() => useConversation(fast()));
+    act(() => void result.current.send('Tell me about Turbo Mode'));
+    await waitFor(() => expect(result.current.state.status).toBe('idle'));
+    act(() => void result.current.send('Tell me about Turbo Mode'));
+    await waitFor(() => expect(result.current.state.status).toBe('idle'));
+    const s = result.current.state;
+    const lastUser = s.messages.findLastIndex((m) => m.role === 'user');
+    expect(s.messages.slice(lastUser + 1).map((m) => [m.role, m.text])).toEqual([
+      [
+        'assistant',
+        'Happy to! Turbo Mode puts a whole options trade on one screen. Scalpers needed five screens and 10+ taps, so Vishal got it down to two.',
+      ],
+      ['assistant', 'Want the numbers, or how he got there?'],
+    ]);
+    expect(s.messages.some((m) => m.text.includes('two.Want'))).toBe(false);
+    expect(s.showSeq).toBe(2);
   });
 
   it('ignores send while thinking, and empty sends', () => {
@@ -125,12 +248,16 @@ describe('useConversation', () => {
     act(() => result.current.retry());
     expect(result.current.state.status).toBe('thinking');
     expect(result.current.state.error).toBeUndefined();
+    expect(result.current.state.messages.map((m) => m.role)).toEqual(['assistant', 'user']);
     await waitFor(() => expect(result.current.state.status).toBe('idle'));
     const s = result.current.state;
     expect(s.messages.filter((m) => m.role === 'user')).toHaveLength(1);
     expect(flaky.calls()).toBe(2);
     // retry history ends at the last user message (no partial bubble sent back)
     expect(flaky.histories[1].map((m) => m.role)).toEqual(['assistant', 'user']);
+    // regenerate: the partial bubble is gone, one complete reply follows the question
+    expect(s.messages.some((m) => m.partial)).toBe(false);
+    expect(s.messages.filter((m) => m.text.includes('Half'))).toHaveLength(0);
     expect(s.messages[s.messages.length - 1].text).toBe(
       'Here are three projects: Turbo Mode, Trade Ideas and the Fisdom revamp. Which one should I pull up?',
     );
@@ -172,7 +299,7 @@ describe('useConversation', () => {
     expect(result.current.slow).toBe('none');
     expect(result.current.state.status).toBe('thinking');
     expect(result.current.state.messages.filter((m) => m.role === 'user')).toHaveLength(1);
-    expect(histories[1].map((m) => m.text)).toEqual([GREETING, 'hello']);
+    expect(histories[1].map((m) => m.content)).toEqual([GREETING, 'hello']);
     await act(async () => {
       await vi.advanceTimersByTimeAsync(8000);
     });

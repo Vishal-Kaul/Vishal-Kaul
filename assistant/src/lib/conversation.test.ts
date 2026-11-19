@@ -16,6 +16,7 @@ describe('initialState', () => {
     expect(s.quickReplies).toEqual(INITIAL_QUICK_REPLIES);
     expect(s.stage).toEqual({ view: 'welcome' });
     expect(s.seq).toBe(1);
+    expect(s.showSeq).toBe(0);
     expect(s.error).toBeUndefined();
     expect(s.streamingId).toBeUndefined();
   });
@@ -188,6 +189,38 @@ describe('SHOW_PROJECT', () => {
     expect(noTab.messages).toHaveLength(shown.messages.length);
   });
 
+  it('same project again still ends the current bubble: the next token starts a new bubble', () => {
+    const s = run([
+      { type: 'SEND', text: 'turbo' },
+      { type: 'SHOW_PROJECT', project: 'turbo-mode', tab: 'results' },
+      { type: 'DONE' },
+      { type: 'SEND', text: 'turbo again' },
+      { type: 'TOKEN', text: 'got it down to two.' },
+      { type: 'SHOW_PROJECT', project: 'turbo-mode', tab: 'results' },
+      { type: 'TOKEN', text: 'Want the numbers?' },
+      { type: 'DONE' },
+    ]);
+    const after = s.messages.slice(s.messages.findIndex((m) => m.text === 'turbo again') + 1);
+    expect(after.map((m) => [m.role, m.text])).toEqual([
+      ['assistant', 'got it down to two.'],
+      ['assistant', 'Want the numbers?'],
+    ]);
+    expect(s.messages.some((m) => m.text.includes('two.Want'))).toBe(false);
+  });
+
+  it('showSeq counts every SHOW_PROJECT (same project included); tab switches and SHOW_WELCOME do not', () => {
+    const s1 = run([{ type: 'SEND', text: 'q' }, { type: 'SHOW_PROJECT', project: 'turbo-mode' }]);
+    expect(s1.showSeq).toBe(1);
+    const s2 = reducer(s1, { type: 'SHOW_PROJECT', project: 'turbo-mode' });
+    expect(s2.showSeq).toBe(2);
+    const s3 = reducer(s2, { type: 'SHOW_PROJECT', project: 'turbo-mode', tab: 'gap' });
+    expect(s3.showSeq).toBe(3);
+    const s4 = reducer(s3, { type: 'SET_TAB', tab: 'learnings' });
+    expect(s4.showSeq).toBe(3);
+    expect(reducer(s4, { type: 'SHOW_WELCOME' }).showSeq).toBe(3);
+    expect(reducer(s4, { type: 'SHOW_PROJECT', project: 'fisdom' }).showSeq).toBe(4);
+  });
+
   it('adds a new activity line when switching to a different project', () => {
     const s = run([
       { type: 'SEND', text: 'q' },
@@ -244,25 +277,69 @@ describe('FAIL', () => {
   });
 });
 
-describe('RETRY', () => {
-  it('from error: back to thinking, error cleared, partial text kept', () => {
+describe('RETRY (regenerate)', () => {
+  it('from error: drops the partial bubble, back to thinking, error cleared; the re-run starts a fresh bubble', () => {
     const err = run([{ type: 'SEND', text: 'q' }, { type: 'TOKEN', text: 'Half' }, { type: 'FAIL', error: 'Oops' }]);
     const s = reducer(err, { type: 'RETRY' });
     expect(s.status).toBe('thinking');
     expect(s.error).toBeUndefined();
-    expect(s.messages).toEqual(err.messages);
+    expect(s.streamingId).toBeUndefined();
+    expect(s.messages.map((m) => [m.role, m.text])).toEqual([
+      ['assistant', GREETING],
+      ['user', 'q'],
+    ]);
     const next = reducer(s, { type: 'TOKEN', text: 'Again' });
-    expect(next.messages).toHaveLength(4);
-    expect(next.messages[3]).toEqual({ id: 'm4', role: 'assistant', text: 'Again' });
+    expect(next.messages).toHaveLength(3);
+    expect(next.messages[2]).toEqual({ id: 'm4', role: 'assistant', text: 'Again' });
   });
 
-  it('is a no-op outside error', () => {
+  it('drops every assistant bubble of the failed turn but keeps activity rows, the stage and earlier turns', () => {
+    const err = run([
+      { type: 'SEND', text: 'first' },
+      { type: 'TOKEN', text: 'Earlier answer.' },
+      { type: 'DONE' },
+      { type: 'SEND', text: 'turbo' },
+      { type: 'TOKEN', text: 'Happy to! ' },
+      { type: 'SHOW_PROJECT', project: 'turbo-mode', tab: 'results' },
+      { type: 'TOKEN', text: 'Want' },
+      { type: 'FAIL', error: 'Oops' },
+    ]);
+    const s = reducer(err, { type: 'RETRY' });
+    expect(s.messages.map((m) => [m.role, m.text])).toEqual([
+      ['assistant', GREETING],
+      ['user', 'first'],
+      ['assistant', 'Earlier answer.'],
+      ['user', 'turbo'],
+      ['activity', 'Pulling up the Turbo Mode case study'],
+    ]);
+    expect(s.stage).toEqual({ view: 'project', project: 'turbo-mode', tab: 'results' });
+  });
+
+  it('from error with nothing streamed keeps the messages', () => {
+    const err = run([{ type: 'SEND', text: 'q' }, { type: 'FAIL', error: 'Oops' }]);
+    const s = reducer(err, { type: 'RETRY' });
+    expect(s.status).toBe('thinking');
+    expect(s.messages).toEqual(err.messages);
+  });
+
+  it('while thinking with nothing streamed: same state object', () => {
+    const thinking = reducer(initialState(), { type: 'SEND', text: 'q' });
+    expect(reducer(thinking, { type: 'RETRY' })).toBe(thinking);
+  });
+
+  it('while streaming: drops the in-flight bubble and goes back to thinking', () => {
+    const streaming = run([{ type: 'SEND', text: 'q' }, { type: 'TOKEN', text: 'x' }]);
+    const s = reducer(streaming, { type: 'RETRY' });
+    expect(s.status).toBe('thinking');
+    expect(s.streamingId).toBeUndefined();
+    expect(s.messages.map((m) => m.role)).toEqual(['assistant', 'user']);
+  });
+
+  it('is a no-op when idle', () => {
     const idle = initialState();
     expect(reducer(idle, { type: 'RETRY' })).toBe(idle);
-    const thinking = reducer(idle, { type: 'SEND', text: 'q' });
-    expect(reducer(thinking, { type: 'RETRY' })).toBe(thinking);
-    const streaming = reducer(thinking, { type: 'TOKEN', text: 'x' });
-    expect(reducer(streaming, { type: 'RETRY' })).toBe(streaming);
+    const done = run([{ type: 'SEND', text: 'q' }, { type: 'TOKEN', text: 'x' }, { type: 'DONE' }]);
+    expect(reducer(done, { type: 'RETRY' })).toBe(done);
   });
 });
 

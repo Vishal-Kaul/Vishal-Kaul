@@ -126,6 +126,36 @@ describe('AssistantApp (mobile)', () => {
     expect(await screen.findByRole('dialog', { name: 'Turbo Mode case study' })).toBeInTheDocument();
   });
 
+  it('"The numbers" chip reopens the sheet for the project already on stage', async () => {
+    stubMatchMedia(false);
+    const user = userEvent.setup();
+    render(<AssistantApp source={fast()} />);
+    const box = screen.getByRole('textbox', { name: BOX });
+    await user.type(box, 'Tell me about Turbo Mode{Enter}');
+    await screen.findByRole('dialog', { name: 'Turbo Mode case study' });
+    await screen.findByRole('button', { name: 'The numbers' });
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('dialog')).toBeNull();
+
+    await user.click(screen.getByRole('button', { name: 'The numbers' }));
+    expect(await screen.findByRole('dialog', { name: 'Turbo Mode case study' })).toBeInTheDocument();
+  });
+
+  it('the composer is inert while the sheet is open', async () => {
+    stubMatchMedia(false);
+    const user = userEvent.setup();
+    render(<AssistantApp source={fast()} />);
+    const box = screen.getByRole('textbox', { name: BOX });
+    expect(box.closest('[inert]')).toBeNull();
+    await user.type(box, 'Fisdom{Enter}');
+    await screen.findByRole('dialog', { name: 'Fisdom Revamp case study' });
+    expect(box.closest('[inert]')).not.toBeNull();
+    // the sheet itself stays usable
+    expect(screen.getByRole('dialog').closest('[inert]')).toBeNull();
+    await user.keyboard('{Escape}');
+    expect(box.closest('[inert]')).toBeNull();
+  });
+
   it('embed mode hides the brand but keeps the trust badge', () => {
     stubMatchMedia(false);
     render(<AssistantApp embed source={fast()} />);
