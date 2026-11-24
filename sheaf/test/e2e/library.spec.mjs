@@ -32,6 +32,7 @@ test("library lists, hovers, multi-deletes and undoes", async () => {
   const page = await context.newPage();
   await page.goto(`chrome-extension://${extensionId}/library/library.html`);
   await page.waitForSelector("[data-ready]");
+  assert.equal(await page.locator("#ai-prompt").isVisible(), false); // no LanguageModel in headless
 
   assert.equal(await page.locator(".row.body").count(), 3);
   await page.getByText("Product · Design tool").waitFor();

@@ -17,6 +17,9 @@ let result = null;
 let editingKey = null;
 let lastClicked = null;
 let undo = null; // { records, timer, text }
+let aiStatus = "unavailable"; // unavailable | downloadable | downloading | hidden
+let aiProgress = 0;
+let aiDismissed = false;
 let writeChain = Promise.resolve();
 
 // Writes from this page run one after another.
@@ -57,6 +60,8 @@ function render() {
     notice.replaceChildren(`${undo.text} · `, el("button", { type: "button", id: "undo", text: "Undo", onclick: doUndo }));
   }
 
+  renderAiPrompt();
+
   const pageKeys = result.rows.map((r) => r.key);
   renderHead($("thead"), {
     sortKey: state.sortKey, sortDir: state.sortDir, selection, pageKeys, total: result.total,
@@ -94,6 +99,60 @@ function render() {
   $("tbody").replaceChildren(...result.rows.map((r) =>
     renderRow(r, { selected: selection.has(r.key), editing: editingKey === r.key, handlers })));
   document.title = PRODUCT_NAME;
+}
+
+function renderAiPrompt() {
+  const node = $("ai-prompt");
+  const show = !aiDismissed && (aiStatus === "downloadable" || aiStatus === "downloading");
+  node.hidden = !show;
+  if (!show) return;
+  if (aiStatus === "downloading") {
+    node.textContent = `Downloading… ${Math.round(aiProgress * 100)}%`;
+    return;
+  }
+  node.replaceChildren(
+    "Smarter sorting is available on this computer. ",
+    el("button", { type: "button", id: "ai-on", text: "Turn on", onclick: turnOnAi }),
+    " · ",
+    el("button", { type: "button", id: "ai-dismiss", text: "Dismiss", onclick: dismissAi }),
+  );
+}
+
+async function initAi() {
+  try {
+    aiDismissed = !!(await store.getMeta()).aiPromptDismissed;
+    if (typeof LanguageModel === "undefined") return;
+    const a = await LanguageModel.availability();
+    aiStatus = a === "downloadable" || a === "downloading" ? a : "unavailable";
+    if (aiStatus === "downloading") aiProgress = 0;
+  } catch {
+    aiStatus = "unavailable";
+  }
+  renderAiPrompt();
+}
+
+async function turnOnAi() {
+  aiStatus = "downloading";
+  aiProgress = 0;
+  renderAiPrompt();
+  try {
+    const session = await LanguageModel.create({
+      monitor(m) {
+        m.addEventListener("downloadprogress", (e) => { aiProgress = e.loaded; renderAiPrompt(); });
+      },
+    });
+    try { session.destroy(); } catch { /* ignore */ }
+    aiStatus = "unavailable"; // ready: hide the prompt
+  } catch {
+    aiStatus = "downloadable";
+  }
+  renderAiPrompt();
+}
+
+async function dismissAi() {
+  aiDismissed = true;
+  renderAiPrompt();
+  try { await store.setMeta({ aiPromptDismissed: true }); } catch { /* ignore */ }
 }
 
 function resetView() {
@@ -164,4 +223,5 @@ chrome.storage.onChanged.addListener((_changes, area) => {
 
 $("product-name").textContent = PRODUCT_NAME;
 document.title = PRODUCT_NAME;
+initAi();
 load().then(() => { document.body.dataset.ready = ""; });

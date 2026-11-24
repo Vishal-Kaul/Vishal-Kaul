@@ -5,6 +5,7 @@ import { newRecord } from "../lib/records.js";
 import { normalizeUrl } from "../lib/url-key.js";
 import { readPage } from "../content/read-page.js";
 import * as icon from "./icon.js";
+import { refineWithAi } from "./ai-bridge.js";
 
 const store = createStore(chrome.storage.local);
 const STATE_KEY = "tabState";
@@ -47,6 +48,7 @@ async function saveActive(override) {
   const signals = override && "signals" in override ? override.signals : await signalsFor(tab);
   const url = signals?.url || tab.url || "";
   const result = await serial(() => savePage(store, { url, signals }, Date.now()));
+  if (result.status === "saved") refineWithAi(result.record.key, signals, { store, serial });
   if (result.status === "saved" || result.status === "exists") {
     try {
       await chrome.tabs.remove(tab.id);

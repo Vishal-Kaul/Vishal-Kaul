@@ -62,6 +62,9 @@ main { padding: 20px 40px 40px; }
 #notice { color: var(--color-ink-2); }
 #notice[hidden] { display: none; }
 #notice button { border: 0; background: none; padding: 0; font-weight: 500; color: var(--color-ink); }
+#ai-prompt { color: var(--color-ink-2); }
+#ai-prompt[hidden] { display: none; }
+#ai-prompt button { border: 0; background: none; padding: 0; font: inherit; font-weight: 500; color: var(--color-ink); cursor: pointer; }
 #range { font: 400 11px/14px "DM Mono", ui-monospace, monospace; color: var(--color-ink-3); }
 .pager { display: flex; gap: 16px; }
 .pager button { border: 0; background: none; padding: 0; font-size: 16px; line-height: 16px; color: var(--color-ink); }
