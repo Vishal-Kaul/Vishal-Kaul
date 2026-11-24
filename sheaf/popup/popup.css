@@ -1,0 +1,23 @@
+html, body { margin: 0; }
+body {
+  width: 300px;
+  background: var(--color-sheet);
+  border-radius: 12px;
+  color: var(--color-ink);
+  font-family: "Instrument Sans", system-ui, sans-serif;
+}
+main { display: flex; flex-direction: column; gap: 14px; padding: 16px; }
+#title { font-size: 15px; line-height: 20px; font-weight: 500; letter-spacing: -0.1px; overflow-wrap: anywhere; }
+#meta { font-family: "DM Mono", ui-monospace, monospace; font-size: 12px; line-height: 16px; color: var(--color-ink-3); margin-top: -10px; overflow-wrap: anywhere; }
+#primary {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  height: 40px; border: 0; border-radius: 8px; padding: 0 16px; cursor: pointer;
+  background: var(--color-ink); color: var(--color-on-ink);
+  font: 500 13px/18px "Instrument Sans", system-ui, sans-serif;
+}
+#primary[hidden], #hint[hidden] { display: none; }
+#primary:hover { background: var(--color-ink-raised); }
+#primary:focus-visible, #library:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+#hint { font: 400 11px/14px "DM Mono", ui-monospace, monospace; color: var(--color-on-ink-2); }
+#library { font-size: 13px; line-height: 18px; color: var(--color-ink-2); text-decoration: none; align-self: flex-start; }
+#library:hover { color: var(--color-ink); text-decoration: underline; }

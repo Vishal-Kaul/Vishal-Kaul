@@ -1,0 +1,46 @@
+:root {
+  --color-paper: #F3F0E8;
+  --color-sheet: #FBFAF6;
+  --color-white: #FFFFFF;
+  --color-sheet-head: #EFEBE2;
+  --color-header: #F7F4EC;
+  --color-row-hover: #F3EEE3;
+  --color-head-hover: #E6E0D3;
+  --color-ink: #1C1B18;
+  --color-ink-2: #4A463F;
+  --color-ink-3: #6F6A61;
+  --color-ink-4: #A8A296;
+  --color-rule: #E5E0D5;
+  --color-rule-soft: #EEEAE1;
+  --color-rule-head: #E2DCCF;
+  --color-rule-strong: #CFC8B8;
+  --color-rule-ledger: #BDB5A3;
+  --color-accent: #C93A22;
+  --color-accent-ink: #A3301B;
+  --color-accent-tint: #F6DED8;
+  --color-success: #1F7A55;
+  --color-success-ink: #1F6247;
+  --color-success-tint: #DDEEE6;
+  --color-danger: #A8321D;
+  --color-on-ink: #FBFAF6;
+  --color-on-ink-2: #BDB7AA;
+  --color-on-ink-accent: #FF8A73;
+  --color-ink-raised: #34322D;
+  --color-ink-line: #4A4740;
+
+  --cat-portfolio-bg: #F6E1E4;
+  --cat-portfolio-text: #8C2944;
+  --cat-portfolio-dot: #C9476A;
+  --cat-blog-bg: #F5EACB;
+  --cat-blog-text: #7A5300;
+  --cat-blog-dot: #C98A0B;
+  --cat-product-bg: #E3E8F7;
+  --cat-product-text: #2A3F8F;
+  --cat-product-dot: #3D5BD9;
+  --cat-service-bg: #DDEEE6;
+  --cat-service-text: #1F6247;
+  --cat-service-dot: #2F8F68;
+  --cat-other-bg: #ECE8DF;
+  --cat-other-text: #4A463F;
+  --cat-other-dot: #8A857A;
+}

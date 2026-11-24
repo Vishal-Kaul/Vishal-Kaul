@@ -1,6 +1,7 @@
 import { createStore } from "../lib/store.js";
 import { savePage } from "../lib/save.js";
 import { onTabUrl, onTabRemoved, seedState } from "../lib/visits.js";
+import { newRecord } from "../lib/records.js";
 import { normalizeUrl } from "../lib/url-key.js";
 import { readPage } from "../content/read-page.js";
 import * as icon from "./icon.js";
@@ -47,7 +48,11 @@ async function saveActive(override) {
   const url = signals?.url || tab.url || "";
   const result = await serial(() => savePage(store, { url, signals }, Date.now()));
   if (result.status === "saved" || result.status === "exists") {
-    await chrome.tabs.remove(tab.id);
+    try {
+      await chrome.tabs.remove(tab.id);
+    } catch {
+      // tab already gone
+    }
     icon.flashDone();
   } else {
     icon.flashError();
@@ -55,8 +60,24 @@ async function saveActive(override) {
   return { status: result.status };
 }
 
-async function stateForActive() {
-  const tab = await activeTab();
+async function recordForTab(tabId) {
+  try {
+    const tab = await chrome.tabs.get(tabId);
+    const key = normalizeUrl(tab.url || "");
+    return key ? await store.get(key) : null;
+  } catch {
+    return null;
+  }
+}
+
+async function refreshIcon(tabId) {
+  await icon.showFor(tabId, await recordForTab(tabId));
+}
+icon.setResolver(recordForTab);
+
+// `tabId` is a test/popup seam; normally the popup targets the active tab.
+async function stateForActive(tabId) {
+  const tab = tabId == null ? await activeTab() : await chrome.tabs.get(tabId).catch(() => null);
   const url = tab?.url || "";
   const title = tab?.title || "";
   const key = normalizeUrl(url);
@@ -69,6 +90,9 @@ function countVisit(tabId, url) {
     const state = await readState();
     const { state: next } = await onTabUrl(state, tabId, url, Date.now(), store);
     await writeState(next);
+  }).then(async () => {
+    const tab = await chrome.tabs.get(tabId).catch(() => null);
+    if (tab?.active) await refreshIcon(tabId);
   });
 }
 
@@ -82,13 +106,17 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   }
 });
 
+chrome.tabs.onActivated.addListener(({ tabId }) => {
+  refreshIcon(tabId);
+});
+
 chrome.tabs.onRemoved.addListener((tabId) => {
   serial(async () => writeState(onTabRemoved(await readState(), tabId)));
 });
 
-chrome.runtime.onStartup.addListener(() => {
-  serial(async () => writeState(seedState(await chrome.tabs.query({}))));
-});
+const seed = () => serial(async () => writeState(seedState(await chrome.tabs.query({}))));
+chrome.runtime.onStartup.addListener(seed);
+chrome.runtime.onInstalled.addListener(seed);
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg?.type === "save-active") {
@@ -96,7 +124,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     return true;
   }
   if (msg?.type === "state-for-active") {
-    stateForActive().then(sendResponse);
+    stateForActive(msg.tabId).then(sendResponse);
     return true;
   }
   if (msg?.type === "open-library") {
@@ -105,4 +133,4 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   return false;
 });
 
-self.__sheaf = { saveActive, store };
+self.__sheaf = { saveActive, store, newRecord };
