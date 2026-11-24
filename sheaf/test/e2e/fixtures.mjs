@@ -12,7 +12,7 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const sheafDir = path.resolve(here, "../..");
 const pagesDir = path.join(here, "pages");
 
-export async function launch() {
+export async function launch({ extensionDir = sheafDir } = {}) {
   const server = http.createServer((req, res) => {
     const name = path.basename(new URL(req.url, "http://x").pathname) || "index.html";
     const file = path.join(pagesDir, name);
@@ -29,7 +29,7 @@ export async function launch() {
   const context = await chromium.launchPersistentContext(userDataDir, {
     channel: "chromium",
     headless: true,
-    args: [`--disable-extensions-except=${sheafDir}`, `--load-extension=${sheafDir}`],
+    args: [`--disable-extensions-except=${extensionDir}`, `--load-extension=${extensionDir}`],
   });
   let worker = context.serviceWorkers()[0];
   if (!worker) worker = await context.waitForEvent("serviceworker");
