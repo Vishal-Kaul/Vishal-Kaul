@@ -15,13 +15,41 @@ export async function aiAvailability() {
   }
 }
 
-async function classify(signals) {
-  const session = await LanguageModel.create();
-  try {
-    const out = await session.prompt(buildPrompt(signals), { responseConstraint: responseSchema() });
+// `LM` is injectable for tests. Resolves to a result or null; never throws.
+// On timeout the in-flight create()/prompt() is aborted and the session destroyed.
+export async function classifyWithTimeout(LM, signals, timeoutMs = TIMEOUT_MS) {
+  const controller = new AbortController();
+  const { signal } = controller;
+  let session = null;
+  let timer;
+  const destroy = () => {
+    try { session?.destroy(); } catch { /* ignore */ }
+  };
+  const work = (async () => {
+    session = await LM.create({
+      signal,
+      expectedInputs: [{ type: "text", languages: ["en"] }],
+      expectedOutputs: [{ type: "text", languages: ["en"] }],
+    });
+    if (signal.aborted) return null;
+    const out = await session.prompt(buildPrompt(signals), { responseConstraint: responseSchema(), signal });
     return parseAiResult(out);
+  })();
+  work.catch(() => {});
+  const timeout = new Promise((res) => {
+    timer = setTimeout(() => {
+      try { controller.abort(); } catch { /* ignore */ }
+      destroy();
+      res(null);
+    }, timeoutMs);
+  });
+  try {
+    return await Promise.race([work, timeout]);
+  } catch {
+    return null;
   } finally {
-    try { session.destroy(); } catch { /* ignore */ }
+    clearTimeout(timer);
+    destroy();
   }
 }
 
@@ -29,11 +57,7 @@ async function classify(signals) {
 export async function refineWithAi(key, signals, { store, serial }) {
   try {
     if (!signals || (await aiAvailability()) !== "available") return;
-    let timer;
-    const result = await Promise.race([
-      classify(signals),
-      new Promise((res) => { timer = setTimeout(() => res(null), TIMEOUT_MS); }),
-    ]).finally(() => clearTimeout(timer));
+    const result = await classifyWithTimeout(LanguageModel, signals);
     if (!result) return;
     await serial(async () => {
       const rec = await store.get(key);
