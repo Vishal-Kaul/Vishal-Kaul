@@ -44,6 +44,9 @@ export async function flashDone() {
   } catch {}
   doneTimer = setTimeout(async () => {
     doneTab = null;
+    try {
+      if (tabId == null) await chrome.action.setIcon({ path: paths("idle") });
+    } catch {}
     const now = await activeTabId();
     if (now != null) await showFor(now, await resolver(now));
   }, DONE_MS);
@@ -58,8 +61,12 @@ export async function flashError() {
     await chrome.action.setBadgeText({ ...target, text: "✕" });
   } catch {}
   errorTimer = setTimeout(async () => {
-    try {
-      await chrome.action.setBadgeText({ ...target, text: "" });
-    } catch {}
+    const now = await activeTabId();
+    if (now != null) await showFor(now, await resolver(now));
+    else {
+      try {
+        await chrome.action.setBadgeText({ text: "" });
+      } catch {}
+    }
   }, ERROR_MS);
 }

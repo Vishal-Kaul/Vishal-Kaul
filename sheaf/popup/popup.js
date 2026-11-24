@@ -1,3 +1,4 @@
+import { PRODUCT_NAME } from "../lib/config.js";
 import { displayLink, isSaveable } from "../lib/url-key.js";
 
 const $ = (id) => document.getElementById(id);
@@ -7,7 +8,8 @@ const tabId = tabParam ? Number(tabParam) : undefined;
 const domainOf = (url) => displayLink(url).split(/[/?]/)[0];
 
 async function init() {
-  const s = await chrome.runtime.sendMessage({ type: "state-for-active", tabId });
+  document.title = PRODUCT_NAME;
+  const s = (await chrome.runtime.sendMessage({ type: "state-for-active", tabId }).catch(() => null)) || { saved: false, title: "", url: "" };
   $("title").textContent = s.title || s.url || "";
   const primary = $("primary");
   if (!isSaveable(s.url)) {
