@@ -61,3 +61,26 @@ test("foreign CSV uses detected URL column and rules category", () => {
   assert.equal(recs[0].name, "My Site");
   assert.equal(recs[0].key, "https://a.com/");
 });
+
+test("hostile records are sanitised and CSV export still works", async () => {
+  const { toCsv } = await import("../lib/csv.js");
+  const now = 5000;
+  const hostile = [
+    { url: "https://a.com/1", name: "x".repeat(10000), savedAt: 1e20, lastVisitedAt: -1e20, visits: Infinity },
+    { url: "https://a.com/2", name: "=cmd()", savedAt: NaN, visits: -5 },
+    { url: "https://a.com/3", visits: NaN, savedAt: "99999999999999999999" },
+    { url: "javascript:alert(1)", name: "bad" },
+    { url: "https://a.com/" + "p".repeat(3000), name: "long" },
+  ];
+  const recs = hostile.map((r) => normalizeIncoming(r, now)).filter(Boolean);
+  assert.equal(recs.length, 3);
+  for (const r of recs) {
+    assert.ok(Number.isSafeInteger(r.visits) && r.visits >= 1);
+    assert.ok(Math.abs(r.savedAt) <= 8.64e15 && Math.abs(r.lastVisitedAt) <= 8.64e15);
+    assert.ok(r.name.length <= 300);
+  }
+  const csv = toCsv(recs);
+  assert.ok(csv.includes("'=cmd()"));
+  const back = recordsFromCsv(csv, now);
+  assert.equal(back.find((r) => r.key === "https://a.com/2").name, "=cmd()");
+});

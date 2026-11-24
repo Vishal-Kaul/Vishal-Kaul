@@ -3,7 +3,8 @@ import { isSaveable } from "./url-key.js";
 export const CSV_HEADER = "name,url,category,subcategory,visits,saved_at";
 
 function cell(v) {
-  const s = String(v ?? "");
+  let s = String(v ?? "");
+  if (/^[=+\-@]/.test(s)) s = "'" + s;
   return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 

@@ -17,6 +17,12 @@ export function createStore(area) {
     async put(rec) {
       await area.set({ [PAGE + rec.key]: clone(rec) });
     },
+    async putMany(recs) {
+      if (!recs.length) return;
+      const items = {};
+      for (const r of recs) items[PAGE + r.key] = clone(r);
+      await area.set(items);
+    },
     async remove(keys) {
       await area.remove(keys.map((k) => PAGE + k));
     },

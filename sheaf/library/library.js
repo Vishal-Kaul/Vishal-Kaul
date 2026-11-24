@@ -147,6 +147,7 @@ async function doExport(kind) {
 
 async function doImport(file) {
   if (!file) return;
+  if (file.size > 20 * 1024 * 1024) { showFlash("That file is too large to import"); return; }
   try {
     const text = await file.text();
     const now = Date.now();
@@ -157,9 +158,7 @@ async function doImport(file) {
       const existing = await store.all();
       const out = mergeImport(existing, incoming, now);
       const byKey = new Map(existing.map((r) => [r.key, r]));
-      for (const r of out.records) {
-        if (JSON.stringify(byKey.get(r.key)) !== JSON.stringify(r)) await store.put(r);
-      }
+      await store.putMany(out.records.filter((r) => JSON.stringify(byKey.get(r.key)) !== JSON.stringify(r)));
       return out;
     });
     await load();

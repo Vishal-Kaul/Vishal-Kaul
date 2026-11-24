@@ -3,18 +3,24 @@ import { isValid } from "./categories.js";
 import { categorizeUrlOnly } from "./categorize.js";
 import { parseCsv, detectUrlColumn, CSV_HEADER } from "./csv.js";
 
+const MAX_TS = 8.64e15;
+const MAX_NAME = 300;
+const MAX_URL = 2048;
+const okTs = (n) => Number.isFinite(n) && Math.abs(n) <= MAX_TS;
+
 function ts(v, fallback) {
-  if (typeof v === "number" && Number.isFinite(v)) return v;
+  if (typeof v === "number" && okTs(v)) return v;
   if (typeof v === "string" && v.trim()) {
     const n = /^\d+$/.test(v.trim()) ? Number(v) : Date.parse(v);
-    if (Number.isFinite(n)) return n;
+    if (okTs(n)) return n;
   }
-  return fallback;
+  return okTs(fallback) ? fallback : Date.now();
 }
 
 // Turns a loosely-shaped incoming object into a full record, or null if its URL can't be saved.
 export function normalizeIncoming(raw, now) {
   const url = typeof raw?.url === "string" ? raw.url.trim() : "";
+  if (url.length > MAX_URL) return null;
   const key = normalizeUrl(url);
   if (!key) return null;
   let { category, subcategory } = raw;
@@ -23,9 +29,10 @@ export function normalizeIncoming(raw, now) {
     ({ category, subcategory } = categorizeUrlOnly(url));
     categorySource = "rules";
   }
-  const visits = Math.max(1, Math.floor(Number(raw.visits)) || 1);
+  const v = Math.floor(Number(raw.visits));
+  const visits = Number.isSafeInteger(v) && v >= 1 ? v : 1;
   const savedAt = ts(raw.savedAt, now);
-  const name = typeof raw.name === "string" && raw.name.trim() ? raw.name.trim() : new URL(key).host;
+  const name = typeof raw.name === "string" && raw.name.trim() ? raw.name.trim().slice(0, MAX_NAME) : new URL(key).host;
   return {
     key, url, name, category, subcategory, categorySource, visits, savedAt,
     lastVisitedAt: ts(raw.lastVisitedAt, savedAt),
@@ -45,8 +52,9 @@ export function recordsFromCsv(text, now = Date.now()) {
   if (!rows.length) return [];
   const out = [];
   if (rows[0].map((c) => c.trim()).join(",") === CSV_HEADER) {
+    const unguard = (c) => (typeof c === "string" ? c.replace(/^'(?=[=+\-@])/, "") : c);
     for (const [name, url, category, subcategory, visits, savedAt] of rows.slice(1)) {
-      const r = normalizeIncoming({ name, url, category, subcategory, visits, savedAt }, now);
+      const r = normalizeIncoming({ name: unguard(name), url, category, subcategory, visits, savedAt }, now);
       if (r) out.push(r);
     }
     return out;

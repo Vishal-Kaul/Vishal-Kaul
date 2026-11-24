@@ -118,7 +118,7 @@ chrome.tabs.onRemoved.addListener((tabId) => {
 });
 
 const seed = () => serial(async () => writeState(seedState(await chrome.tabs.query({}))));
-const setup = () => { seed(); ensureAlarm(chrome.alarms); };
+const setup = () => { seed(); ensureAlarm(chrome.alarms).catch((e) => console.error(e)); };
 chrome.runtime.onStartup.addListener(setup);
 chrome.runtime.onInstalled.addListener(setup);
 
