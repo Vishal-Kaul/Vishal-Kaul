@@ -3,6 +3,8 @@ import { MAIN } from "../lib/categories.js";
 import { createStore } from "../lib/store.js";
 import { applyEdit } from "../lib/records.js";
 import { runQuery } from "../lib/query.js";
+import { toCsv, toJson } from "../lib/csv.js";
+import { mergeImport, recordsFromCsv, recordsFromJson } from "../lib/merge.js";
 import { createSelection } from "./selection.js";
 import { el, renderHead, renderRow } from "./table.js";
 
@@ -17,6 +19,8 @@ let result = null;
 let editingKey = null;
 let lastClicked = null;
 let undo = null; // { records, timer, text }
+let flash = null; // { text, timer } transient notice
+let meta = { settings: { backup: true }, lastBackupAt: null };
 let aiStatus = "unavailable"; // unavailable | downloadable | downloading | hidden
 let aiProgress = 0;
 let aiDismissed = false;
@@ -55,10 +59,13 @@ function render() {
   $("next").disabled = result.page >= result.pageCount;
 
   const notice = $("notice");
-  notice.hidden = !undo;
+  notice.hidden = !undo && !flash;
   if (undo) {
     notice.replaceChildren(`${undo.text} · `, el("button", { type: "button", id: "undo", text: "Undo", onclick: doUndo }));
+  } else if (flash) {
+    notice.replaceChildren(flash.text);
   }
+  renderBackup();
 
   renderAiPrompt();
 
@@ -81,7 +88,7 @@ function render() {
 
   const handlers = {
     toggle(key, shift) {
-      if (shift && lastClicked && lastClicked !== key) selection.range(lastClicked, key, pageKeys);
+      if (shift && lastClicked && lastClicked !== key && pageKeys.includes(lastClicked)) selection.range(lastClicked, key, pageKeys);
       else selection.toggle(key);
       lastClicked = key;
       render();
@@ -99,6 +106,80 @@ function render() {
   $("tbody").replaceChildren(...result.rows.map((r) =>
     renderRow(r, { selected: selection.has(r.key), editing: editingKey === r.key, handlers })));
   document.title = PRODUCT_NAME;
+}
+
+function renderBackup() {
+  const on = meta.settings.backup;
+  const last = meta.lastBackupAt
+    ? ` · Last backup ${new Date(meta.lastBackupAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}`
+    : "";
+  $("backup-toggle").textContent = `Weekly backup: ${on ? "on" : "off"}${on ? last : ""}`;
+}
+
+function showFlash(text, ms = 5000) {
+  clearTimeout(flash?.timer);
+  flash = { text, timer: setTimeout(() => { flash = null; render(); }, ms) };
+  render();
+}
+
+function download(name, text, type) {
+  const url = URL.createObjectURL(new Blob([text], { type }));
+  const a = el("a", { href: url, download: name });
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function today() {
+  const d = new Date();
+  const p = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
+async function doExport(kind) {
+  $("export-menu").hidden = true;
+  const all = await store.all();
+  const base = `${PRODUCT_NAME.toLowerCase()}-export-${today()}`;
+  if (kind === "csv") download(`${base}.csv`, toCsv(all), "text/csv;charset=utf-8");
+  else download(`${base}.json`, toJson(all, Date.now()), "application/json");
+}
+
+async function doImport(file) {
+  if (!file) return;
+  try {
+    const text = await file.text();
+    const now = Date.now();
+    const incoming = /\.json$/i.test(file.name) || text.trimStart().startsWith("{") || text.trimStart().startsWith("[")
+      ? recordsFromJson(text, now)
+      : recordsFromCsv(text, now);
+    const { added, updated } = await enqueue(async () => {
+      const existing = await store.all();
+      const out = mergeImport(existing, incoming, now);
+      const byKey = new Map(existing.map((r) => [r.key, r]));
+      for (const r of out.records) {
+        if (JSON.stringify(byKey.get(r.key)) !== JSON.stringify(r)) await store.put(r);
+      }
+      return out;
+    });
+    await load();
+    showFlash(`Imported ${added} new · ${updated} updated`);
+  } catch (e) {
+    console.error(e);
+    showFlash("Couldn't read that file");
+  }
+}
+
+async function toggleBackup() {
+  const on = !meta.settings.backup;
+  meta = { ...meta, settings: { ...meta.settings, backup: on } };
+  renderBackup();
+  await enqueue(() => store.setMeta({ settings: { backup: on } }));
+}
+
+async function loadMeta() {
+  try { meta = await store.getMeta(); } catch { /* keep defaults */ }
+  renderBackup();
 }
 
 function renderAiPrompt() {
@@ -166,6 +247,7 @@ function setSort(key) {
   if (state.sortKey === key) state.sortDir = state.sortDir === "asc" ? "desc" : "asc";
   else { state.sortKey = key; state.sortDir = key === "visits" || key === "savedAt" ? "desc" : "asc"; }
   state.page = 1;
+  lastClicked = null;
   render();
 }
 
@@ -175,7 +257,7 @@ async function saveEdit(key, { name, category, subcategory }) {
   if (rec) {
     await enqueue(async () => {
       try { await store.put(applyEdit(rec, { name, category, subcategory }, Date.now())); }
-      catch (e) { console.error(e); }
+      catch (e) { console.error(e); showFlash("Couldn't save that change"); }
     });
   }
   await load();
@@ -205,10 +287,14 @@ async function doUndo() {
 }
 
 $("search").addEventListener("input", (e) => { state.search = e.target.value; resetView(); render(); });
-$("prev").addEventListener("click", () => { state.page--; selection.clear(); render(); });
-$("next").addEventListener("click", () => { state.page++; selection.clear(); render(); });
-$("import").addEventListener("click", (e) => e.preventDefault());
-$("export").addEventListener("click", (e) => e.preventDefault());
+$("prev").addEventListener("click", () => { state.page--; selection.clear(); lastClicked = null; render(); });
+$("next").addEventListener("click", () => { state.page++; selection.clear(); lastClicked = null; render(); });
+$("import").addEventListener("click", (e) => { e.preventDefault(); $("import-file").click(); });
+$("import-file").addEventListener("change", (e) => { const f = e.target.files[0]; e.target.value = ""; doImport(f); });
+$("export").addEventListener("click", (e) => { e.preventDefault(); $("export-menu").hidden = !$("export-menu").hidden; });
+$("export-csv").addEventListener("click", () => doExport("csv"));
+$("export-json").addEventListener("click", () => doExport("json"));
+$("backup-toggle").addEventListener("click", toggleBackup);
 document.addEventListener("keydown", (e) => {
   const t = e.target;
   const typing = t instanceof HTMLElement && (t.isContentEditable || ["INPUT", "SELECT", "TEXTAREA"].includes(t.tagName));
@@ -218,10 +304,11 @@ document.addEventListener("keydown", (e) => {
   }
 });
 chrome.storage.onChanged.addListener((_changes, area) => {
-  if (area === "local" && editingKey === null) load();
+  if (area === "local" && editingKey === null) { load(); loadMeta(); }
 });
 
 $("product-name").textContent = PRODUCT_NAME;
 document.title = PRODUCT_NAME;
 initAi();
+loadMeta();
 load().then(() => { document.body.dataset.ready = ""; });

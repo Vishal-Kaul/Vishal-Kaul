@@ -1,4 +1,4 @@
-import { MAIN, SUBS, label } from "../lib/categories.js";
+import { MAIN, SUBS, label, isValid } from "../lib/categories.js";
 import { displayLink } from "../lib/url-key.js";
 
 export function el(tag, props = {}, children = []) {
@@ -74,7 +74,8 @@ export function renderRow(rec, { selected, editing, handlers }) {
       for (const sub of SUBS[main]) g.append(el("option", { value: `${main}|${sub}`, text: label(main, sub) }));
       select.append(g);
     }
-    select.value = `${rec.category}|${rec.subcategory}`;
+    const cur = `${rec.category}|${rec.subcategory}`;
+    select.value = isValid(rec.category, rec.subcategory) ? cur : `${MAIN[0]}|${SUBS[MAIN[0]][0]}`;
     const onKey = (e) => {
       if (e.key === "Enter") {
         e.preventDefault();

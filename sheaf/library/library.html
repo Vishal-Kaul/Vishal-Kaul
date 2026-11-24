@@ -29,7 +29,11 @@
   <div class="right">
     <span class="hint">Press Alt+Shift+S on any tab to save it</span>
     <a href="#" id="import" class="toplink">Import</a>
-    <a href="#" id="export" class="toplink">Export</a>
+    <input id="import-file" type="file" accept=".json,.csv,application/json,text/csv" hidden>
+    <span id="export-wrap">
+      <a href="#" id="export" class="toplink">Export</a>
+      <span id="export-menu" hidden><button type="button" id="export-csv">CSV</button><button type="button" id="export-json">JSON</button></span>
+    </span>
   </div>
 </header>
 <main>
@@ -46,6 +50,7 @@
     <div id="thead" class="row head" role="row"></div>
     <div id="tbody"></div>
   </div>
+  <div id="settings"><button type="button" id="backup-toggle"></button></div>
 </main>
 <script type="module" src="library.js"></script>
 </body>

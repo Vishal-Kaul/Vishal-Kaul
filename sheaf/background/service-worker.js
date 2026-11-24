@@ -6,6 +6,7 @@ import { normalizeUrl } from "../lib/url-key.js";
 import { readPage } from "../content/read-page.js";
 import * as icon from "./icon.js";
 import { refineWithAi } from "./ai-bridge.js";
+import { runBackup, ensureAlarm, BACKUP_ALARM } from "./backup.js";
 
 const store = createStore(chrome.storage.local);
 const STATE_KEY = "tabState";
@@ -117,8 +118,17 @@ chrome.tabs.onRemoved.addListener((tabId) => {
 });
 
 const seed = () => serial(async () => writeState(seedState(await chrome.tabs.query({}))));
-chrome.runtime.onStartup.addListener(seed);
-chrome.runtime.onInstalled.addListener(seed);
+const setup = () => { seed(); ensureAlarm(chrome.alarms); };
+chrome.runtime.onStartup.addListener(setup);
+chrome.runtime.onInstalled.addListener(setup);
+
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name !== BACKUP_ALARM) return;
+  serial(async () => {
+    if (!(await store.getMeta()).settings.backup) return;
+    await runBackup(store, chrome.downloads, Date.now());
+  }).catch((e) => console.error(e));
+});
 
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg?.type === "save-active") {
