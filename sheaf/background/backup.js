@@ -15,7 +15,15 @@ export async function runBackup(store, downloads, now) {
   const records = await store.all();
   const meta = await store.getMeta();
   if (!records.length) return { status: "skipped", reason: "empty" };
-  if (meta.lastBackupCount && records.length < meta.lastBackupCount / 2) return { status: "skipped", reason: "shrunk" };
+  if (meta.lastBackupCount && records.length < meta.lastBackupCount / 2) {
+    // A deliberate big delete must not stop backups forever: skip once, then accept
+    // the new size if the next run sees the same (or a smaller) library.
+    const prev = meta.backupSkippedCount;
+    if (prev == null || records.length > prev) {
+      await store.setMeta({ backupSkippedAt: now, backupSkippedCount: records.length });
+      return { status: "skipped", reason: "shrunk" };
+    }
+  }
   const json = toJson(records, now);
   const id = await downloads.download({
     url: "data:application/json;charset=utf-8," + encodeURIComponent(json),
@@ -29,7 +37,7 @@ export async function runBackup(store, downloads, now) {
     try { await downloads.removeFile(oldId); } catch { /* file already gone */ }
     try { await downloads.erase({ id: oldId }); } catch { /* ignore */ }
   }
-  await store.setMeta({ backups: all.slice(-KEEP), lastBackupAt: now, lastBackupCount: records.length });
+  await store.setMeta({ backups: all.slice(-KEEP), lastBackupAt: now, lastBackupCount: records.length, backupSkippedAt: null, backupSkippedCount: null });
   return { status: "done", id };
 }
 

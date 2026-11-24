@@ -54,3 +54,24 @@ test("the 5th backup removes the 1st", async () => {
   assert.deepEqual(d.log.erased, [1]);
   assert.deepEqual((await s.getMeta()).backups, [2, 3, 4, 5]);
 });
+
+test("a shrink skip is recorded, and the next run at the same size writes the backup", async () => {
+  const s = await seeded(3), d = fakeDownloads();
+  await s.setMeta({ lastBackupCount: 10, backups: [1] });
+  assert.equal((await runBackup(s, d, T)).status, "skipped");
+  const m = await s.getMeta();
+  assert.equal(m.backupSkippedAt, T);
+  assert.equal(m.backupSkippedCount, 3);
+  assert.equal((await runBackup(s, d, T + 1)).status, "done");
+  const after = await s.getMeta();
+  assert.equal(after.lastBackupCount, 3);
+  assert.equal(after.backupSkippedAt, null);
+  assert.equal(d.log.downloads.length, 1);
+});
+
+test("a second shrink skip with a larger library still skips", async () => {
+  const s = await seeded(4), d = fakeDownloads();
+  await s.setMeta({ lastBackupCount: 10, backupSkippedAt: T, backupSkippedCount: 3 });
+  assert.equal((await runBackup(s, d, T + 1)).status, "skipped");
+  assert.equal(d.log.downloads.length, 0);
+});

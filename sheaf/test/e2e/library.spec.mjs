@@ -84,6 +84,27 @@ test("edit in place saves category via Enter and Esc cancels; search and tabs fi
   assert.equal(await page.locator("#range").innerText(), "1–1 of 1");
 });
 
+test("a visit counted while editing survives the edit", async () => {
+  const { context, worker, extensionId } = env;
+  const page = await context.newPage();
+  await page.goto(`chrome-extension://${extensionId}/library/library.html`);
+  await page.waitForSelector("[data-ready]");
+  const key = (await allRecords(worker)).find((r) => r.url.includes("nngroup.com")).key;
+  const before = (await allRecords(worker)).find((r) => r.key === key).visits;
+  await page.locator(`.row.body[data-key="${key}"]`).hover();
+  await page.locator(`.row.body[data-key="${key}"] .edit`).click();
+  await worker.evaluate(async (k) => {
+    const r = await self.__sheaf.store.get(k);
+    await self.__sheaf.store.put({ ...r, visits: r.visits + 5 });
+  }, key);
+  await page.locator(".edit-name").fill("NN Group");
+  await page.locator(".edit-name").press("Enter");
+  await page.waitForFunction(() => document.querySelector(".edit-name") === null);
+  const rec = (await allRecords(worker)).find((r) => r.key === key);
+  assert.equal(rec.name, "NN Group");
+  assert.equal(rec.visits, before + 5);
+});
+
 test("slash focuses search; opening via options page works", async () => {
   const { context, extensionId } = env;
   const page = await context.newPage();

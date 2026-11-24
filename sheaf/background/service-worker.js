@@ -113,6 +113,17 @@ chrome.tabs.onActivated.addListener(({ tabId }) => {
   refreshIcon(tabId);
 });
 
+chrome.tabs.onReplaced.addListener((addedTabId, removedTabId) => {
+  serial(async () => {
+    const state = await readState();
+    if (removedTabId in state) {
+      state[addedTabId] = state[removedTabId];
+      delete state[removedTabId];
+      await writeState(state);
+    }
+  }).catch((e) => console.error(e));
+});
+
 chrome.tabs.onRemoved.addListener((tabId) => {
   serial(async () => writeState(onTabRemoved(await readState(), tabId)));
 });
@@ -130,9 +141,19 @@ chrome.alarms.onAlarm.addListener((alarm) => {
   }).catch((e) => console.error(e));
 });
 
+// The library may delete, import or edit records: refresh the active tab's icon.
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area !== "local" || !Object.keys(changes).some((k) => k.startsWith("page:"))) return;
+  activeTab().then((tab) => tab && refreshIcon(tab.id)).catch(() => {});
+});
+
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   if (msg?.type === "save-active") {
-    saveActive().then(sendResponse);
+    saveActive().then(sendResponse, (e) => {
+      console.error(e);
+      icon.flashError();
+      sendResponse({ status: "error" });
+    });
     return true;
   }
   if (msg?.type === "state-for-active") {
@@ -145,4 +166,5 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   return false;
 });
 
+// Test hook only; reachable solely from the extension's own worker context.
 self.__sheaf = { saveActive, store, newRecord };

@@ -99,7 +99,7 @@ function render() {
       setTimeout(() => { btn.textContent = "Copy link"; }, 1200);
     },
     edit(key) { editingKey = key; render(); const i = document.querySelector(".edit-name"); i?.focus(); i?.select(); },
-    cancelEdit() { editingKey = null; render(); },
+    cancelEdit() { editingKey = null; load(); },
     saveEdit,
     remove: (key) => deleteKeys([key]),
   };
@@ -110,9 +110,10 @@ function render() {
 
 function renderBackup() {
   const on = meta.settings.backup;
-  const last = meta.lastBackupAt
-    ? ` · Last backup ${new Date(meta.lastBackupAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}`
-    : "";
+  const fmt = (t) => new Date(t).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+  const last = meta.backupSkippedAt
+    ? ` · Skipped ${fmt(meta.backupSkippedAt)} (library shrank)`
+    : meta.lastBackupAt ? ` · Last backup ${fmt(meta.lastBackupAt)}` : "";
   $("backup-toggle").textContent = `Weekly backup: ${on ? "on" : "off"}${on ? last : ""}`;
 }
 
@@ -251,14 +252,14 @@ function setSort(key) {
 }
 
 async function saveEdit(key, { name, category, subcategory }) {
-  const rec = records.find((r) => r.key === key);
   editingKey = null;
-  if (rec) {
-    await enqueue(async () => {
-      try { await store.put(applyEdit(rec, { name, category, subcategory }, Date.now())); }
-      catch (e) { console.error(e); showFlash("Couldn't save that change"); }
-    });
-  }
+  // Re-read inside the queue: visits or AI re-files may have landed while editing.
+  await enqueue(async () => {
+    try {
+      const cur = await store.get(key);
+      if (cur) await store.put(applyEdit(cur, { name, category, subcategory }, Date.now()));
+    } catch (e) { console.error(e); showFlash("Couldn't save that change"); }
+  });
   await load();
 }
 
