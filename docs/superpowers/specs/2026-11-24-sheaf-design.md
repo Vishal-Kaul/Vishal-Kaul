@@ -31,7 +31,7 @@ They checked existing tools (OneTab, Smart Tab Saver, Raindrop, Karakeep and oth
 5. **Free and unlimited.** $0 to use, no account, no server, no practical limit on the number of saved sites, MIT-licensed and public on GitHub.
 6. **Never lose data.** Export to CSV and JSON, import from them, plus an automatic weekly backup file.
 
-**Non-goals (v1)**: phone or multi-device sync, automatically saving every site, Firefox/Safari/Edge builds, page snapshots or screenshots, highlights or reading mode, sharing, Chrome Web Store publishing. All of these can come later. The code should not prevent sync from being added.
+**Non-goals (v1)**: phone or multi-device sync, automatically saving every site, bulk "save all open tabs at once" (the owner skipped this option on 2026-11-22), Firefox/Safari/Edge builds, page snapshots or screenshots, highlights or reading mode, sharing, Chrome Web Store publishing. All of these can come later. The code should not prevent sync from being added.
 
 **Anti-goals** (failures even if everything else works):
 
@@ -185,8 +185,22 @@ After **Save, keep open**, a toast appears at the bottom right of the page for 5
 ### 5.9 Backup, export and import
 
 - **Export:** CSV (one row per site, all fields) and JSON (the full records plus a schema version).
-- **Import:** CSV or JSON. When a site key already exists, the newer `lastVisitedAt` wins and visits are added together.
-- **Weekly backup:** a `chrome.alarms` alarm writes `Downloads/Sheaf/sheaf-backup.json` with `chrome.downloads`, overwriting the previous file. It is on by default and can be turned off in settings. The dashboard shows "Last backup: <date>".
+- **Import (v1 scope):**
+  - Sheaf's own CSV and JSON.
+  - Any CSV that has a column of URLs, such as the owner's old Google Sheet. The URL column is detected automatically. These rows are filed with rules based on the URL alone, because the page isn't opened, and are marked `categorySource: rules`. The site's next visit re-reads the page and improves the category, unless the owner set it by hand.
+  - Browser bookmarks, OneTab and Raindrop imports are later work.
+- **Import merge rules** for a site key that already exists (my call):
+  - `visits`: take the larger number. Never add them, so re-importing a backup can't inflate counts.
+  - `savedAt`: the earlier date.
+  - `lastVisitedAt`: the later date.
+  - `starred`: true if either is true.
+  - `note`: keep the existing one; use the imported one only if the existing one is empty.
+  - Category and subcategory: a value with `categorySource: user` wins; otherwise keep the existing one.
+  - Import never deletes rows.
+- **Weekly backup:** a `chrome.alarms` alarm writes `Downloads/Sheaf/sheaf-backup-YYYY-MM-DD.json` with `chrome.downloads`.
+  - It keeps the **last 4** backups by deleting older Sheaf backup files it created itself, which it tracks by download ID.
+  - It **skips writing** when the library is empty, or has fewer than half the rows of the previous backup, and shows a warning in the dashboard instead. A wiped or corrupted library therefore never replaces a good backup.
+  - It is on by default and can be turned off in settings. The dashboard shows "Last backup: <date>".
 
 ### 5.10 Permissions and privacy
 
@@ -238,7 +252,8 @@ Each phase ends with something the owner can load in Chrome and try.
 - `chrome.storage.local` as the store behind a swappable module (5.3).
 - Saving counts as visit 1. Saving again never adds a row or a visit.
 - Restored session tabs don't count as visits.
-- The weekly backup is on by default.
+- The weekly backup is on by default, keeps the last 4 files, and never overwrites a good backup with a much smaller library.
+- Import scope and merge rules (5.9).
 - Plain JavaScript with no build step; Node is used only for tests.
 - The default subcategory lists (5.5).
 
