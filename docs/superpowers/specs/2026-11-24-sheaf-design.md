@@ -1,7 +1,7 @@
 # Sheaf (working name): design
 
 Date: 2026-11-24 (v2: simplified after owner review)
-Status: draft, waiting for owner approval
+Status: approved to build (2026-11-24)
 Product name: **not decided yet**. "Sheaf" is a placeholder.
 Visual design: [Figma file](https://www.figma.com/design/RIPdRfahgtktGA1abkfVDX/Untitled), page "Page 1" (v2 frames). The v1 frames are kept for reference on the "v1 archive" page. Tokens and type styles are in [`2026-11-24-sheaf-visual-spec.md`](./2026-11-24-sheaf-visual-spec.md) (section 3). Its v1 screen layouts (sections 5.1–5.5) are **replaced** by section 5.7 of this document and the v2 Figma frames.
 
@@ -33,10 +33,11 @@ They checked existing tools (OneTab, Smart Tab Saver, Raindrop, Karakeep and oth
 4. **The list.** A full-page, spreadsheet-like list with four columns: Site, Link, Category, Visits. It has search, category tabs, pagination, hover actions (Open, Copy link, Edit, Delete) and Gmail-style multiple selection for deleting many rows at once.
 5. **Free and unlimited.** $0 to use, no account, no server, no practical limit on the number of saved pages. MIT-licensed and public on GitHub.
 6. **Never lose data.** Export to CSV and JSON, import from them, plus an automatic weekly backup file.
+7. **See the list on a phone or tablet** (owner request, 2026-11-24). The library is synced to the owner's own Google Drive and shown on a mobile-friendly web page (5.11). This is built after the core works on the computer.
 
 **Non-goals (v1)**
 
-- phone or multi-device sync
+- saving from the phone (the phone can view, open, edit and delete; saving happens on the computer)
 - automatically saving every site
 - "save all open tabs at once" (the owner skipped this option on 2026-11-22)
 - "save but keep the tab open" and the toast
@@ -71,6 +72,7 @@ All of these can come later.
 | **A. Everything inside the extension.** The list is an extension page. Data lives in Chrome's extension storage with the `unlimitedStorage` permission. | $0, private, offline, unlimited (limited only by disk: about 1 KB per page, so 100,000 pages is about 100 MB). It lives on one computer, and uninstalling deletes the data, which is covered by export and the weekly backup. | **Chosen** (2026-11-24). |
 | B. Extension plus a free cloud database (Supabase or Firebase). | Works on a phone. But free tiers cap storage (500 MB to 1 GB), pause or limit activity, need an account, and send data off the device. | Rejected for v1. |
 | C. Extension plus a private GitHub repository as the database. | Needs a token, is slow, and hosting a list from a private repo isn't free. | Rejected. |
+| **D. A plus sync to the owner's own Google Drive**, plus the same library as a mobile-friendly web page on GitHub Pages (sign in with Google). | Free, 15 GB (millions of rows), private to the owner, no server of ours. Needs a one-time Google Cloud setup (an OAuth client ID), guided step by step. | **Chosen for phone and tablet access** (my call, 2026-11-24), added as a later phase on top of A. |
 
 **Capture:** one shortcut saves instantly. This was chosen over automatically saving every site, and over a popup form. The owner rejected a form on save on 2026-11-24.
 
@@ -210,12 +212,13 @@ Matches the v2 Figma frames `Library` and `Library · 3 selected`. **Text only.*
   - Right: "Press Alt+Shift+S on any tab to save it" in quiet text, then "Export".
 
   Import lives next to Export, as a menu or a second text link (builder's call, kept as text).
-- **Category tabs:** All · Portfolio · Blog · Product · Service · Other, each with its count, as plain text. The active tab is underlined.
+- **Category tabs:** the v1 index-card tabs (owner request, 2026-11-24): All · Portfolio · Blog · Product · Service · Other, each with a coloured dot and its count. The active tab joins the table like a folder tab, with its count in a vermilion pill.
 - **Pager:** "1–50 of 248 ‹ ›", Gmail style, on the right of the tab row. 50 rows per page.
 - **Columns:** a checkbox, **Site** (name), **Link** (domain and path, cut short with "…" when long), **Category** ("Product · Design tool"), **Visits** (number, right-aligned).
   - Clicking a column header sorts by it.
   - The default is newest saved first.
-- **Hover a row:** the text actions Open ↗, Copy link, Edit, Delete appear on the right.
+- **Hover a row:** the v1 dark pill toolbar appears on the right with Open ↗, Copy link, Edit, Delete. The owner preferred it over plain text (2026-11-24).
+- **Hover a link:** it turns ink, gets an underline and shows "↗". Clicking it opens the page in a new tab.
   - **Edit** turns the Site name and the Category into in-place fields. Category is a plain list of the fixed categories. Enter saves; Esc cancels.
   - **Delete** removes the row, and a plain line "Deleted · Undo" appears in the tab row for 5 seconds.
 - **Multiple selection (Gmail style):**
@@ -244,6 +247,18 @@ Matches the v2 Figma frames `Library` and `Library · 3 selected`. **Text only.*
   - It skips writing when the library is empty, or has fewer than half the rows of the previous backup.
   - It is on by default. Turning it off is one text toggle.
 
+### 5.11 Phone and tablet access (Google Drive sync)
+
+- The extension keeps working fully offline on the computer. Sync is optional and is turned on with "Connect Google Drive" in the library.
+- **Storage:** one file, `sheaf-library.json` (split into chunks if very large), in the owner's Drive **app data folder**. That folder is hidden and private to Sheaf. The only scope requested is `drive.appdata`, so Sheaf can't see any other Drive files.
+- **Syncing:** the extension pushes changes a few seconds after any save, edit or delete, and pulls when the library opens.
+- **Conflicts:** for each row, the later `updatedAt` wins. Deletes are kept as tombstones for 30 days so they sync too.
+- **Mobile page:** the same library code, made responsive. Each row becomes one column: the site, with the link and category underneath and the visits on the right. It is hosted free on GitHub Pages from the project repository.
+  - Signing in with Google reads the Drive file.
+  - On the phone you can search, filter by category, open links, edit and delete.
+  - "Add to Home Screen" makes it feel like an app.
+- **One-time setup:** create a free Google Cloud project, then one OAuth client for the extension and one for the web page. The README walks through it with screenshots.
+
 ### 5.9 Permissions and privacy
 
 `storage`, `unlimitedStorage`, `tabs` (to see tab URLs for visit counting; Chrome shows "Read your browsing history" at install), `activeTab`, `scripting`, `alarms`, `downloads` and `offscreen` (only if needed for AI).
@@ -271,7 +286,8 @@ Each phase ends with something the owner can load in Chrome and try.
 5. **The popup** (two buttons).
 6. **Export, import and weekly backup.**
 7. **Chrome built-in AI** (optional path) and the one-line "Turn on" prompt.
-8. **Polish:**
+8. **Google Drive sync and the mobile web page** (5.11).
+9. **Polish:**
    - a performance check with 20,000 generated rows
    - a README with install steps
    - an MIT licence
@@ -295,6 +311,9 @@ Each phase ends with something the owner can load in Chrome and try.
   - categories pre-built and picked automatically
   - an empty library shows nothing extra
   - a different URL means a different entry
+- The hover toolbar and category tabs use the v1 style. Links get an underline and ↗ on hover (2026-11-24).
+- It must be reachable from a phone or tablet (2026-11-24).
+- The name will be decided later; start building now (2026-11-24).
 - **Repository:** "whatever is best for management." Decided as a dedicated public repository named after the product, created once the name is chosen.
 
 ## 8. Calls made by Claude (open to change)
