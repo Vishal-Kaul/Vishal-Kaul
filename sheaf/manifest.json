@@ -8,6 +8,7 @@
     "service_worker": "background/service-worker.js",
     "type": "module"
   },
+  "options_page": "library/library.html",
   "action": {
     "default_popup": "popup/popup.html",
     "default_icon": {

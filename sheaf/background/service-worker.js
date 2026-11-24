@@ -128,7 +128,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     return true;
   }
   if (msg?.type === "open-library") {
-    chrome.tabs.create({ url: chrome.runtime.getURL("library/library.html") });
+    chrome.runtime.openOptionsPage();
   }
   return false;
 });
